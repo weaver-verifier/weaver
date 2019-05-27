@@ -1,0 +1,30 @@
+(var m1 m2 m3 s t x Int)
+(var b Bool)
+
+(assume (and (= s t x 0) (= b false)))
+
+(par
+  (seq
+    (atomic
+      (set! m1 t)
+      (set! t (+ t 1)))
+    (assume (<= m1 s))
+    (set! x 1)
+    (set! x 0)
+    (set! s (+ s 1)))
+  (seq
+    (atomic
+      (set! m2 t)
+      (set! t (+ t 1)))
+    (assume (<= m2 s))
+    (set! b (or b (= x 1)))
+    (set! s (+ s 1)))
+  (seq
+    (atomic
+      (set! m3 t)
+      (set! t (+ t 1)))
+    (assume (<= m3 s))
+    (set! b (or b (= x 1)))
+    (set! s (+ s 1))))
+
+(assume b)

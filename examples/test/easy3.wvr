@@ -1,0 +1,14 @@
+(var L new old Int)
+
+(set! L 0)
+
+; L = 1 ==> new = old
+(while (and (not (= new old)) (not (= L 1)))
+  (set! L 1)
+  (set! old new)
+  (cond
+    (seq (set! L 0)
+         (set! new (+ new 1)))
+    (seq)))
+
+(assume (and (= L 1) (not (= new old))))

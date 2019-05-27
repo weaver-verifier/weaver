@@ -1,0 +1,8 @@
+(var sponsored!0 () Bool)
+(var sponsored!1 () Bool)
+(var result!2 () Int)
+(var result!3 () Int)
+(par
+  (set! result!2 (if (= sponsored!0 sponsored!1) 0 (if sponsored!1 (- 0 1) 1)))
+  (set! result!3 (if (= sponsored!1 sponsored!0) 0 (if sponsored!0 (- 0 1) 1))))
+(assume (not (= (if (< result!2 0) (- 1) (if (> result!2 0) 1 0)) (- 0 (if (< result!3 0) (- 1) (if (> result!3 0) 1 0))))))

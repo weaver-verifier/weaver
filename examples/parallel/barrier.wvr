@@ -1,0 +1,49 @@
+(var x!0 () Int)
+(var y!1 () Int)
+(var f1!2 () Bool)
+(var f2!3 () Bool)
+(var temp!4 () Int)
+(var temp!5 () Int)
+(var x!6 () Int)
+(var y!7 () Int)
+(var f1!8 () Bool)
+(var f2!9 () Bool)
+(var temp!10 () Int)
+(var temp!11 () Int)
+(assume (and (= x!0 x!6) (= y!1 y!7)))
+(par
+  (seq
+    (assume (and (= x!0 y!1) (and (not f1!2) (not f2!3))))
+    (par
+      (seq
+        (set! temp!4 x!0)
+        (set! x!0 (+ temp!4 1))
+        (set! f1!2 true)
+        (assume (and f1!2 f2!3))
+        (set! temp!4 y!1)
+        (set! y!1 (+ temp!4 1)))
+      (seq
+        (set! temp!5 y!1)
+        (set! y!1 (+ temp!5 1))
+        (set! f2!3 true)
+        (assume (and f1!2 f2!3))
+        (set! temp!5 x!0)
+        (set! x!0 (+ temp!5 1)))))
+  (seq
+    (assume (and (= x!6 y!7) (and (not f1!8) (not f2!9))))
+    (par
+      (seq
+        (set! temp!10 x!6)
+        (set! x!6 (+ temp!10 1))
+        (set! f1!8 true)
+        (assume (and f1!8 f2!9))
+        (set! temp!10 y!7)
+        (set! y!7 (+ temp!10 1)))
+      (seq
+        (set! temp!11 y!7)
+        (set! y!7 (+ temp!11 1))
+        (set! f2!9 true)
+        (assume (and f1!8 f2!9))
+        (set! temp!11 x!6)
+        (set! x!6 (+ temp!11 1))))))
+(assume (not (and (= x!0 x!6) (= y!1 y!7))))

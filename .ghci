@@ -1,0 +1,9 @@
+:set +m
+:set -Wall
+:set -ifinite/src -iautomata/src -iismt/src
+
+-- :set -fno-warn-orphans -ifinite/test
+-- :load Main
+
+:set -itrauma/src
+:load Main

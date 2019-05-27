@@ -1,0 +1,65 @@
+cabal-version:       2.4
+name:                finite
+version:             0.1.0.0
+synopsis:            Classes and data structures for finite types
+-- description:
+homepage:            https://github.com/YellPika/finite
+bug-reports:         https://github.com/YellPika/finite/issues
+license:             BSD-3-Clause
+license-file:        LICENSE
+author:              YellPika
+maintainer:          yellpika@gmail.com
+copyright:           © 2018 Anthony Vandikas
+category:            Data
+extra-source-files:  CHANGELOG.md
+
+library
+  exposed-modules:     Data.Finite.Class,
+                       Data.Finite.Container,
+                       Data.Finite.Instances,
+                       Data.Finite.Small,
+                       Data.Finite.Small.Map,
+                       Data.Finite.Small.Set,
+                       Data.Finite.Set,
+                       Data.Finite.Set.Antichain,
+                       Data.Finite.Set.AntiMap
+  other-modules:       Data.Finite.Small.Internal
+  reexported-modules:  Data.Finite,
+                       Data.Finite.Internal
+  build-depends:       base                      ^>=4.12.0.0,
+                       containers                ^>=0.6.0.1,
+                       finite-typelits           ^>=0.1.4.2,
+                       ghc-typelits-knownnat     ^>=0.6,
+                       ghc-typelits-natnormalise ^>=0.6.2,
+                       keys                      ^>=3.12.1,
+                       reflection                ^>=2.1.4,
+                       semigroupoids             ^>=5.3.1,
+                       template-haskell          ^>=2.14.0.0,
+                       these                     ^>=0.7.5,
+                       transformers              ^>=0.5.5.0,
+                       vector                    ^>=0.12.0.1
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+test-suite properties
+  type:                exitcode-stdio-1.0
+  other-modules:       Data.Finite.ClassSpec,
+                       Data.Finite.ContainerSpec,
+                       Data.Finite.Set.AntichainSpec,
+                       Data.Finite.Set.AntiMapSpec,
+                       Data.Finite.SetSpec,
+                       Data.Finite.Util
+  build-depends:       base                  ^>=4.12.0.0,
+                       containers            ^>=0.6.0.1,
+                       ghc-typelits-knownnat ^>=0.6,
+                       hspec                 ^>=2.6.0,
+                       hspec-leancheck       ^>=0.0.2,
+                       leancheck             ^>=0.8.0,
+                       these                 ^>=0.7.5,
+                       finite
+  build-tool-depends:  hspec-discover:hspec-discover
+  main-is:             Main.hs
+  hs-source-dirs:      test
+  default-language:    Haskell2010
+  ghc-options:         -threaded -Wall -fno-warn-orphans

@@ -1,0 +1,95 @@
+(var e1 e2 e3 e4 Bool)
+(var n1 n2 n3 n4 Int)
+(var i i1 i2 i3 i4 Int)
+
+(assume (and
+     (= i 0)
+     (= e1 false)
+     (= e2 false)
+     (= e3 false)
+     (= e4 false)
+     (= n1 0)
+     (= n2 0)
+     (= n3 0)
+     (= n4 0)
+))
+
+(par
+  (seq (set! e1 true)
+       (set! n1 (if (< n1 n2) n2 n1))
+       (set! n1 (if (< n1 n3) n3 n1))
+       (set! n1 (if (< n1 n4) n4 n1))
+       (set! n1 (+ n1 1))
+       (set! e1 false)
+
+       (assume (not e2))
+       (assume (not (and (/= n2 0) (or (< n2 n1) (and (= n2 n1) (< 2 1))))))
+       (assume (not e3))
+       (assume (not (and (/= n3 0) (or (< n3 n1) (and (= n3 n1) (< 3 1))))))
+       (assume (not e4))
+       (assume (not (and (/= n4 0) (or (< n4 n1) (and (= n4 n1) (< 4 1))))))
+
+       (set! i1 i)
+       (set! i (+ i1 1))
+
+       (set! n1 0))
+
+  (seq (set! e2 true)
+       (set! n2 (if (< n2 n1) n1 n2))
+       (set! n2 (if (< n2 n3) n3 n2))
+       (set! n2 (if (< n2 n4) n4 n2))
+       (set! n2 (+ n2 1))
+       (set! e2 false)
+
+       (assume (not e1))
+       (assume (not (and (/= n1 0) (or (< n1 n2) (and (= n1 n2) (< 1 2))))))
+       (assume (not e3))
+       (assume (not (and (/= n3 0) (or (< n3 n2) (and (= n3 n2) (< 3 2))))))
+       (assume (not e4))
+       (assume (not (and (/= n4 0) (or (< n4 n2) (and (= n4 n2) (< 4 2))))))
+
+       (set! i2 i)
+       (set! i (+ i2 1))
+
+       (set! n2 0))
+
+  (seq (set! e3 true)
+       (set! n3 (if (< n3 n1) n1 n3))
+       (set! n3 (if (< n3 n2) n2 n3))
+       (set! n3 (if (< n3 n4) n4 n3))
+       (set! n3 (+ n3 1))
+       (set! e3 false)
+
+       (assume (not e1))
+       (assume (not (and (/= n1 0) (or (< n1 n3) (and (= n1 n3) (< 1 3))))))
+       (assume (not e2))
+       (assume (not (and (/= n2 0) (or (< n2 n3) (and (= n2 n3) (< 2 3))))))
+       (assume (not e4))
+       (assume (not (and (/= n4 0) (or (< n4 n3) (and (= n4 n3) (< 4 3))))))
+
+       (set! i3 i)
+       (set! i (+ i3 1))
+
+       (set! n3 0))
+
+  (seq (set! e4 true)
+       (set! n4 (if (< n4 n1) n1 n4))
+       (set! n4 (if (< n4 n2) n2 n4))
+       (set! n4 (if (< n4 n3) n3 n4))
+       (set! n4 (+ n4 1))
+       (set! e4 false)
+
+       (assume (not e1))
+       (assume (not (and (/= n1 0) (or (< n1 n4) (and (= n1 n4) (< 1 4))))))
+       (assume (not e2))
+       (assume (not (and (/= n2 0) (or (< n2 n4) (and (= n2 n4) (< 2 4))))))
+       (assume (not e3))
+       (assume (not (and (/= n3 0) (or (< n3 n4) (and (= n3 n4) (< 3 4))))))
+
+       (set! i4 i)
+       (set! i (+ i4 1))
+
+       (set! n4 0))
+)
+
+(assume (not (= i 4)))

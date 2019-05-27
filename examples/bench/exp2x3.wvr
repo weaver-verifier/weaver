@@ -1,0 +1,15 @@
+(var x1 x2 x3 x4 n Int)
+
+(assume (and (= x1 x2) (> x1 0)
+             (= x3 x4) (> x3 0)))
+
+(par (while (< x1 n)
+       (set! x1 (+ x1 x1)))
+     (while (< x2 n)
+       (set! x2 (+ x2 x2)))
+     (while (< x3 n)
+       (set! x3 (+ x3 x3)))
+     (while (< x4 n)
+       (set! x4 (+ x4 x4))))
+
+(assume (not (and (= x1 x2) (= x3 x4))))

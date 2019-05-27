@@ -1,0 +1,25 @@
+; Parallel Sum 1 (Determinism)
+
+(var x (Int) Int)
+(var i1 i2 t11 t21 t12 t22 s1 s2 n Int)
+
+(assume (= s1 s2 i1 i2 0))
+
+(par (loop (atomic (assume (< i1 n))
+                   (set! i1 (+ i1 1))
+                   (set! t11 (x i1)))
+           (set! s1 (+ s1 t11)))
+     (loop (atomic (assume (< i1 n))
+                   (set! i1 (+ i1 1))
+                   (set! t21 (x i1)))
+           (set! s1 (+ s1 t21)))
+     (loop (atomic (assume (< i2 n))
+                   (set! i2 (+ i2 1))
+                   (set! t12 (x i2)))
+           (set! s2 (+ s2 t12)))
+     (loop (atomic (assume (< i2 n))
+                   (set! i2 (+ i2 1))
+                   (set! t22 (x i2)))
+           (set! s2 (+ s2 t22))))
+
+(assume (and (= i1 i2 n) (not (= s1 s2))))

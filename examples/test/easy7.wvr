@@ -1,0 +1,17 @@
+(var x1 x2 Int)
+
+;(use (= x1 x2)
+;     (= x1 (+ x2 1)))
+
+(assume (= x1 x2))
+
+(par (seq (set! x2 (+ x2 1))
+          (set! x2 (+ x2 1))
+          (set! x2 (+ x2 1))
+          (set! x2 (+ x2 1)))
+     (seq (set! x1 (+ x1 1))
+          (set! x1 (+ x1 1))
+          (set! x1 (+ x1 1))
+          (set! x1 (+ x1 1))))
+
+(assume (not (= x1 x2)))

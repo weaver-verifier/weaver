@@ -1,0 +1,13 @@
+(var A (Int) Int)
+(var i j n r Int)
+
+(assume (and (<= 0 j) (< j n)))
+
+(set! i 1)
+(set! r 0)
+(while (< i n)
+  (if (< (A r) (A i))
+    (set! r i))
+  (set! i (+ i 1)))
+
+(assume (not (<= (A j) (A r))))

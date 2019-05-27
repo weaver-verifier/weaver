@@ -1,0 +1,13 @@
+(var x!0 () Int)
+(var x!1 () Int)
+(var temp!2 () Int)
+(assume (= x!0 x!1))
+(par
+  (set! x!0 (+ x!0 1))
+  (set! x!0 (+ x!0 1))
+  (seq
+    (set! temp!2 x!1)
+    (set! x!1 (+ temp!2 1))
+    (set! temp!2 x!1)
+    (set! x!1 (+ temp!2 1))))
+(assume (not (= x!0 x!1)))

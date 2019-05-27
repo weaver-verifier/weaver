@@ -1,0 +1,54 @@
+(var scoreA scoreB (Int) Int)
+(var isNullA isNullB Int)
+
+(var comp!1 i!1 result!1 Int)
+(var continue!1 Bool)
+
+(var comp!2 i!2 result!2 Int)
+(var continue!2 Bool)
+
+(par
+  (seq
+    (atomic
+      (set! continue!1 true)
+      (assume (not (= isNullA 0)))
+      (set! continue!1 (if (= isNullB 0) false continue!1))
+      (set! comp!1 (if continue!1 0 comp!1))
+      (set! i!1 (if continue!1 0 i!1)))
+    (loop
+      (atomic
+        (assume (and continue!1 (< i!1 5)))
+        (set! comp!1 (if (< (scoreA i!1) (scoreB i!1))
+                         (- 1)
+                         (if (> (scoreA i!1) (scoreB i!1))
+                             1
+                             0)))
+        (set! result!1 (if (not (= comp!1 0)) comp!1 result!1))
+        (set! continue!1 (if (not (= comp!1 0)) false continue!1))
+        (set! i!1 (if (not (= comp!1 0)) i!1 (+ i!1 1)))))
+    (atomic
+      (assume (not (and continue!1 (< i!1 5))))
+      (set! result!1 (if continue!1 0 result!1))))
+  (seq
+    (atomic
+      (set! continue!2 true)
+      (assume (not (= isNullB 0)))
+      (set! continue!2 (if (= isNullA 0) false continue!2))
+      (set! comp!2 (if continue!2 0 comp!2))
+      (set! i!2 (if continue!2 0 i!2)))
+    (loop
+      (atomic
+        (assume (and continue!2 (< i!2 5)))
+        (set! comp!2 (if (< (scoreB i!2) (scoreA i!2))
+                         (- 1)
+                         (if (> (scoreB i!2) (scoreA i!2))
+                             1
+                             0)))
+        (set! result!2 (if (not (= comp!2 0)) comp!2 result!2))
+        (set! continue!2 (if (not (= comp!2 0)) false continue!2))
+        (set! i!2 (if (not (= comp!2 0)) i!2 (+ i!2 1)))))
+    (atomic
+      (assume (not (and continue!2 (< i!2 5))))
+      (set! result!2 (if continue!2 0 result!2)))))
+
+(assume (not (= result!1 (- result!2))))

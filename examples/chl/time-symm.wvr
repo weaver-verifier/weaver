@@ -1,0 +1,12 @@
+(var ora!0 () Int)
+(var volume-totale!1 () Int)
+(var ora!2 () Int)
+(var volume-totale!3 () Int)
+(var cmp!4 () Int)
+(var cmp!5 () Int)
+(par
+  (atomic (set! cmp!4 (- ora!0 ora!2))
+          (set! cmp!4 (if (= cmp!4 0) (- volume-totale!1 volume-totale!3) cmp!4)))
+  (atomic (set! cmp!5 (- ora!2 ora!0))
+          (set! cmp!5 (if (= cmp!5 0) (- volume-totale!3 volume-totale!1) cmp!5))))
+(assume (not (= (if (< cmp!4 0) (- 1) (if (> cmp!4 0) 1 0)) (- 0 (if (< cmp!5 0) (- 1) (if (> cmp!5 0) 1 0))))))

@@ -1,0 +1,14 @@
+(var x y z w Int)
+(var first Bool)
+
+(set! first true)
+
+(while (or first (not (= x y)))
+  (set! first false)
+  (set! z 0)
+  (set! x y)
+  (if (not (= w 0))
+    (seq (set! x (+ x 1))
+         (set! z 1))))
+
+(assume (not (= z 0)))

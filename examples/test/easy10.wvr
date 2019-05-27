@@ -1,0 +1,39 @@
+(var x1 x2 y1 y2 t11 t12 t21 t22 Int)
+(var f11 f12 f21 f22 Bool)
+
+(assume (and (= x1 x2) (= y1 y2) (= f11 f12 f21 f22 false)))
+
+(par
+  (seq
+    (set! t11 (+ x1 1))
+    (set! x1 t11)
+    (set! f11 true)
+    (assume (and f11 f21))
+    (set! t11 (+ y1 1))
+    (set! y1 t11))
+
+  (seq
+    (set! t21 (+ y1 1))
+    (set! y1 t21)
+    (set! f21 true)
+    (assume (and f11 f21))
+    (set! t21 (+ x1 1))
+    (set! x1 t21))
+
+  (seq
+    (set! t12 (+ x2 1))
+    (set! x2 t12)
+    (set! f12 true)
+    (assume (and f12 f22))
+    (set! t12 (+ y2 1))
+    (set! y2 t12))
+
+  (seq
+    (set! t22 (+ y2 1))
+    (set! y2 t22)
+    (set! f22 true)
+    (assume (and f12 f22))
+    (set! t22 (+ x2 1))
+    (set! x2 t22)))
+
+(assume (not (and (= x1 x2) (= y1 y2))))

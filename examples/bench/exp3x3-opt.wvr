@@ -1,0 +1,39 @@
+(var x1 x2 x3 x4 x5 x6 n Int)
+
+; (use (= x1 x2)
+;      (< x1 n)
+;      (< x2 n)
+;      (= x1 (+ x2 x2)))
+; (use (= x3 x4)
+;      (< x3 n)
+;      (< x4 n)
+;      (= x3 (+ x4 x4)))
+; (use (= x5 x6)
+;      (< x5 n)
+;      (< x6 n)
+;      (= x5 (+ x6 x6)))
+
+(assume (and (= x1 x2) (= x3 x4) (= x5 x6)))
+
+(par (loop
+       (atomic (assume (< x1 n))
+               (set! x1 (+ x1 x1))))
+     (loop
+       (atomic (assume (< x2 n))
+               (set! x2 (+ x2 x2))))
+     (loop
+       (atomic (assume (< x3 n))
+               (set! x3 (+ x3 x3))))
+     (loop
+       (atomic (assume (< x4 n))
+               (set! x4 (+ x4 x4))))
+     (loop
+       (atomic (assume (< x5 n))
+               (set! x5 (+ x5 x5))))
+     (loop
+       (atomic (assume (< x6 n))
+               (set! x6 (+ x6 x6)))))
+
+(assume (and (>= x1 n) (>= x2 n) (not (= x1 x2))
+             (>= x3 n) (>= x4 n) (not (= x3 x4))
+             (>= x5 n) (>= x6 n) (not (= x5 x6))))

@@ -1,0 +1,54 @@
+cabal-version:       2.4
+name:                automata
+version:             0.1.0.0
+synopsis:            Generic directed graphs and finite automata
+-- description:
+homepage:            https://github.com/YellPika/automata
+bug-reports:         https://github.com/YellPika/automata/issues
+license:             BSD-3-Clause
+license-file:        LICENSE
+author:              YellPika
+maintainer:          yellpika@gmail.com
+copyright:           © 2018 Anthony Vandikas
+category:            Language
+extra-source-files:  CHANGELOG.md
+
+library
+  exposed-modules:     Data.Automata.Classes,
+                       Data.Automata.DFA,
+                       Data.Automata.Graph,
+                       Data.Automata.NFA,
+                       Data.Automata.Regex
+  build-depends:       base          ^>=4.12.0.0,
+                       containers    ^>=0.6.0.1,
+                       finite        ^>=0.1.0.0,
+                       keys          ^>=3.12.1,
+                       semigroupoids ^>=5.3.1,
+                       these         ^>=0.7.5,
+                       transformers  ^>=0.5.5.0,
+                       vector-sized  ^>=1.1.1.0
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+test-suite properties
+  type:                exitcode-stdio-1.0
+  other-modules:       Data.Automata.DFASpec,
+                       Data.Automata.GraphSpec,
+                       Data.Automata.NFASpec,
+                       Data.Automata.RegexSpec,
+                       Data.Automata.Util
+  build-depends:       base                  ^>=4.12.0.0,
+                       containers            ^>=0.6.0.1,
+                       finite                ^>=0.1.0.0,
+                       ghc-typelits-knownnat ^>=0.6,
+                       hspec                 ^>=2.6.0,
+                       hspec-leancheck       ^>=0.0.2,
+                       leancheck             ^>=0.8.0,
+                       vector-sized          ^>=1.1.0.0,
+                       automata
+  build-tool-depends:  hspec-discover:hspec-discover
+  main-is:             Main.hs
+  hs-source-dirs:      test
+  default-language:    Haskell2010
+  ghc-options:         -threaded -Wall -fno-warn-orphans

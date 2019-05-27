@@ -1,0 +1,15 @@
+; Statements are only independent under certain circumstances.
+(var p1 p2 n1 n2 m Int)
+
+(assume (and (= p1 p2) (= n1 n2)))
+
+(par (while (> n1 0) (atomic (set! p1 (if (> n1 0) (+ p1 m) p1))
+                             (set! n1 (if (> n1 0) (- n1 1) n1))))
+     (while (> n1 1) (atomic (set! p1 (if (> n1 1) (+ p1 (* 2 m)) p1))
+                             (set! n1 (if (> n1 1) (- n1 2) n1))))
+     (while (> n2 0) (atomic (set! p2 (if (> n2 0) (+ p2 m) p2))
+                             (set! n2 (if (> n2 0) (- n2 1) n2))))
+     (while (> n2 1) (atomic (set! p2 (if (> n2 1) (+ p2 (* 2 m)) p2))
+                             (set! n2 (if (> n2 1) (- n2 2) n2)))))
+
+(assume (not (= p1 p2)))

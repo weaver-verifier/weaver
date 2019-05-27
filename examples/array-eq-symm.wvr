@@ -1,0 +1,19 @@
+; Array Equality (Symmetry)
+
+(var A B (Int) Int)
+(var i-AB i-BA An Bn Int)
+(var break-AB break-BA Bool)
+
+(assume (and (= i-AB i-BA 0) (= break-AB break-BA false)))
+
+(par
+  (while (and (< i-AB An) (< i-AB Bn) (not break-AB))
+    (if (= (A i-AB) (B i-AB))
+      (set! i-AB (+ i-AB 1))
+      (set! break-AB true)))
+  (while (and (< i-BA Bn) (< i-BA An) (not break-BA))
+    (if (= (B i-BA) (A i-BA))
+      (set! i-BA (+ i-BA 1))
+      (set! break-BA true))))
+
+(assume (not (= i-AB i-BA)))

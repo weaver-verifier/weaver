@@ -1,0 +1,38 @@
+; Loop Tiling (Equivalence)
+
+(var x i j L N M a b Int)
+(var A F (Array Int Int))
+(var B (Array Int (Array Int Int)))
+
+(par
+  (seq
+    (set! x 0)
+    (loop
+      (atomic
+        (assume (< x L))
+        (store! A x (select F x))
+        (set! x (+ x 1))))
+    (assume (not (< x L))))
+
+  (seq
+    (set! i 0)
+    (loop
+      (atomic
+        (assume (< i N))
+        (set! j 0))
+      (loop
+        (atomic
+          (assume (< j M))
+          (store! B i (store (select B i) j (select F (+ (* i M) j))))
+          (set! j (+ j 1))))
+      (atomic
+        (assume (not (< j M)))
+        (set! i (+ i 1))))
+    (assume (not (< i N)))))
+
+(assume (not
+  (=> (<= 0 a) (< a N)
+      (<= 0 b) (< b M)
+      (= L (* N M))
+      (= (select A (+ (* a M) b))
+         (select (select B a) b)))))

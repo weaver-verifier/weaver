@@ -1,0 +1,37 @@
+(var y!0 () Int)
+(var x!1 () Int)
+(var z!2 () Int)
+(var h!3 () Bool)
+(var l!4 () Int)
+(var x!5 () Int)
+(var z!6 () Int)
+(var h!7 () Bool)
+(var l!8 () Int)
+(par
+  (seq
+    (set! z!2 1)
+    (cond
+      (seq
+        (assume h!3)
+        (set! x!1 1))
+      (assume (not h!3)))
+    (cond
+      (seq
+        (assume (not h!3))
+        (set! x!1 z!2))
+      (assume (not (not h!3))))
+    (set! l!4 (+ x!1 y!0)))
+  (seq
+    (set! z!6 1)
+    (cond
+      (seq
+        (assume h!7)
+        (set! x!5 1))
+      (assume (not h!7)))
+    (cond
+      (seq
+        (assume (not h!7))
+        (set! x!5 z!6))
+      (assume (not (not h!7))))
+    (set! l!8 (+ x!5 y!0))))
+(assume (not (= l!4 l!8)))

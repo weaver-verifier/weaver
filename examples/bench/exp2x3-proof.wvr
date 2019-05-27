@@ -1,0 +1,32 @@
+(var x1 x2 x3 x4 n Int)
+
+(use
+        ;(<= x3 x4)
+        ;(<= x1 x2)
+        ;(<= x2 x1)
+        ;(<= x4 x3)
+        ;(and (= x1 x2) (and (<= x3 x4) (<= x4 x3)))
+        ;(and (= x1 x2) (and (<= x4 x3) (<= x3 x4)))
+        ;(and (= x3 x4) (and (<= x1 x2) (<= x2 x1)))
+        ;(and (= x3 x4) (and (<= x2 x1) (<= x1 x2)))
+        (and (= x1 x2) (= x3 x4))
+        (<= n x4)
+        (<= n x2)
+        (<= (+ x2 (* (- 1) n)) (- 1))
+        (<= (+ x4 (* (- 1) n)) (- 1))
+        (and (= x1 x2) (and (<= (+ (* 2 x4) (* (- 1) x3)) 0) (<= 0 (+ (* 2 x4) (* (- 1) x3)))))
+        (and (= x3 x4) (and (<= (+ (* 2 x2) (* (- 1) x1)) 0) (<= 0 (+ (* 2 x2) (* (- 1) x1))))))
+
+(assume (and (= x1 x2) (> x1 0)
+             (= x3 x4) (> x3 0)))
+
+(par (while (< x1 n)
+       (set! x1 (+ x1 x1)))
+     (while (< x2 n)
+       (set! x2 (+ x2 x2)))
+     (while (< x3 n)
+       (set! x3 (+ x3 x3)))
+     (while (< x4 n)
+       (set! x4 (+ x4 x4))))
+
+(assume (not (and (= x1 x2) (= x3 x4))))

@@ -1,0 +1,10 @@
+(var length!0 () Int)
+(var to-int!1 () Int)
+(var length!2 () Int)
+(var to-int!3 () Int)
+(var result!4 () Int)
+(var result!5 () Int)
+(par
+  (set! result!4 (if (= length!0 0) (if (= length!2 0) 0 1) (if (= length!2 0) (- 0 1) (- to-int!1 to-int!3))))
+  (set! result!5 (if (= length!2 0) (if (= length!0 0) 0 1) (if (= length!0 0) (- 0 1) (- to-int!3 to-int!1)))))
+(assume (not (= (if (< result!4 0) (- 1) (if (> result!4 0) 1 0)) (- 0 (if (< result!5 0) (- 1) (if (> result!5 0) 1 0))))))

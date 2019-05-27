@@ -1,0 +1,26 @@
+(var t d s Int)
+(var sec met Bool)
+(var break assert Bool)
+
+(set! t 0)
+(set! d 0)
+(set! s 0)
+(set! break false)
+(set! assert false)
+
+(loop (assume (not break))
+      (set! assert false)
+      (if sec
+          (seq (set! s 0)
+               (set! t (+ t 1))
+               (if (= (- t 1) 4)
+                   (set! break true))))
+      (if (and met (not break))
+          (seq (set! s (+ s 1))
+               (if (= (- s 1) 3)
+                   (set! break true))
+               (if (not break)
+                   (seq (set! d (+ d 1))
+                        (set! assert true))))))
+
+(assume (and assert (= d 10)))

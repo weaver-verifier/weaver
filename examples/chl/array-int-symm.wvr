@@ -1,0 +1,32 @@
+(var array!0 (Int) Int)
+(var len!1 () Int)
+(var array!2 (Int) Int)
+(var len!3 () Int)
+(var i!4 () Int)
+(var break!5 () Bool)
+(var result!6 () Int)
+(var i!7 () Int)
+(var break!8 () Bool)
+(var result!9 () Int)
+(par
+  (seq
+    (atomic (set! i!4 0)
+            (set! break!5 false)
+            (set! result!6 (- len!1 len!3)))
+    (loop
+      (atomic (assume (and (< i!4 len!1) (and (< i!4 len!3) (not break!5))))
+              (set! i!4 (+ i!4 1))
+              (set! break!5 (/= (array!0 i!4) (array!2 i!4)))
+              (set! result!6 (if (= (array!0 i!4) (array!2 i!4)) result!6 (- (array!0 i!4) (array!2 i!4))))))
+    (assume (not (and (< i!4 len!1) (and (< i!4 len!3) (not break!5))))))
+  (seq
+    (atomic (set! i!7 0)
+            (set! break!8 false)
+            (set! result!9 (- len!3 len!1)))
+    (loop
+      (atomic (assume (and (< i!7 len!3) (and (< i!7 len!1) (not break!8))))
+              (set! i!7 (+ i!7 1))
+              (set! break!8 (/= (array!2 i!7) (array!0 i!7)))
+              (set! result!9 (if (= (array!2 i!7) (array!0 i!7)) result!9 (- (array!2 i!7) (array!0 i!7))))))
+    (assume (not (and (< i!7 len!3) (and (< i!7 len!1) (not break!8)))))))
+(assume (not (= (if (< result!6 0) (- 1) (if (> result!6 0) 1 0)) (- 0 (if (< result!9 0) (- 1) (if (> result!9 0) 1 0))))))

@@ -1,0 +1,11 @@
+(var n p Int)
+
+(assume (not (= p 0)))
+
+(while (and (>= n 0) (not (= p 0)))
+  (if (= n 0)
+      (set! p 0)
+      (seq))
+  (set! n (- n 1)))
+
+(assume (not (<= n 0)))

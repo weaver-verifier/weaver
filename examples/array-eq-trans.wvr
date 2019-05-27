@@ -1,0 +1,26 @@
+; Array Equality (Transitivity)
+
+(var A B C (Int) Int)
+(var i-AB i-BC i-AC An Bn Cn Int)
+(var break-AB break-BC break-AC Bool)
+
+(assume (and (= i-AB i-BC i-AC 0) (= break-AB break-BC break-AC false)))
+
+(par
+  (while (and (< i-AB An) (< i-AB Bn) (not break-AB))
+    (if (= (A i-AB) (B i-AB))
+      (set! i-AB (+ i-AB 1))
+      (set! break-AB true)))
+  (while (and (< i-BC Bn) (< i-BC Cn) (not break-BC))
+    (if (= (B i-BC) (C i-BC))
+      (set! i-BC (+ i-BC 1))
+      (set! break-BC true)))
+  (while (and (< i-AC An) (< i-AC Cn) (not break-AC))
+    (if (= (A i-AC) (C i-AC))
+      (set! i-AC (+ i-AC 1))
+      (set! break-AC true))))
+
+(assume (not
+  (=> (or (= i-AB An) (and (< i-AB Bn) (<= (A i-AB) (B i-AB))))
+      (or (= i-BC Bn) (and (< i-BC Cn) (<= (B i-BC) (C i-BC))))
+      (or (= i-AC An) (and (< i-AC Cn) (<= (A i-AC) (C i-AC)))))))

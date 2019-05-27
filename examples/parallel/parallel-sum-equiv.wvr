@@ -1,0 +1,38 @@
+(var X!0 (Int) Int)
+(var n!1 () Int)
+(var s!2 () Int)
+(var i!3 () Int)
+(var t!4 () Int)
+(var t!5 () Int)
+(var s!6 () Int)
+(var i!7 () Int)
+(var t!8 () Int)
+(par
+  (seq
+    (atomic (set! i!3 0)
+            (set! s!2 0))
+    (par
+      (seq
+        (loop
+          (atomic (assume (< i!3 n!1))
+                  (set! i!3 (+ i!3 1))
+                  (set! t!4 (X!0 i!3)))
+          (set! s!2 (+ s!2 t!4)))
+        (assume (not (< i!3 n!1))))
+      (seq
+        (loop
+          (atomic (assume (< i!3 n!1))
+                  (set! i!3 (+ i!3 1))
+                  (set! t!5 (X!0 i!3)))
+          (set! s!2 (+ s!2 t!5)))
+        (assume (not (< i!3 n!1))))))
+  (seq
+    (atomic (set! i!7 0)
+            (set! s!6 0))
+    (loop
+      (atomic (assume (< i!7 n!1))
+              (set! i!7 (+ i!7 1))
+              (set! t!8 (X!0 i!7)))
+      (set! s!6 (+ s!6 t!8)))
+    (assume (not (< i!7 n!1)))))
+(assume (not (= s!2 s!6)))

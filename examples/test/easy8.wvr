@@ -1,0 +1,12 @@
+; Semi-commutation example
+
+(var b c Bool)
+
+(assume true)
+
+(par (atomic (assume (not b))
+             (set! c false))
+     (atomic (set! b true)
+             (set! c true)))
+
+(assume (not c))

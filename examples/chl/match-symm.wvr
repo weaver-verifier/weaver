@@ -1,0 +1,12 @@
+(var score!0 () Int)
+(var seq-1-start!1 () Int)
+(var seq-2-start!2 () Int)
+(var score!3 () Int)
+(var seq-1-start!4 () Int)
+(var seq-2-start!5 () Int)
+(var result!6 () Int)
+(var result!7 () Int)
+(par
+  (set! result!6 (if (> score!0 score!3) (- 0 1) (if (< score!0 score!3) 1 (if (< (+ seq-1-start!1 seq-2-start!2) (+ seq-1-start!4 seq-2-start!5)) (- 0 1) (if (> (+ seq-1-start!1 seq-2-start!2) (+ seq-1-start!4 seq-2-start!5)) 1 0)))))
+  (set! result!7 (if (> score!3 score!0) (- 0 1) (if (< score!3 score!0) 1 (if (< (+ seq-1-start!4 seq-2-start!5) (+ seq-1-start!1 seq-2-start!2)) (- 0 1) (if (> (+ seq-1-start!4 seq-2-start!5) (+ seq-1-start!1 seq-2-start!2)) 1 0))))))
+(assume (not (= (if (< result!6 0) (- 1) (if (> result!6 0) 1 0)) (- 0 (if (< result!7 0) (- 1) (if (> result!7 0) 1 0))))))

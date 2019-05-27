@@ -1,0 +1,6 @@
+(var x Int)
+(set! x 0)
+(if (not (= x 0))
+    (havoc! x)
+    (seq))
+(assume (not (= x 0)))

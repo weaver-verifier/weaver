@@ -1,0 +1,10 @@
+(var sort-label!0 () Int)
+(var sort-label-is-null!1 () Bool)
+(var sort-label!2 () Int)
+(var sort-label-is-null!3 () Bool)
+(var result!4 () Int)
+(var result!5 () Int)
+(par
+  (set! result!4 (if (and (= sort-label-is-null!1 sort-label-is-null!3) (=> (and (not sort-label-is-null!1) (not sort-label-is-null!3)) (= sort-label!0 sort-label!2))) 0 (if sort-label-is-null!1 (- 0 1) (if sort-label-is-null!3 1 (- sort-label!0 sort-label!2)))))
+  (set! result!5 (if (and (= sort-label-is-null!3 sort-label-is-null!1) (=> (and (not sort-label-is-null!3) (not sort-label-is-null!1)) (= sort-label!2 sort-label!0))) 0 (if sort-label-is-null!3 (- 0 1) (if sort-label-is-null!1 1 (- sort-label!2 sort-label!0))))))
+(assume (not (= (if (< result!4 0) (- 1) (if (> result!4 0) 1 0)) (- 0 (if (< result!5 0) (- 1) (if (> result!5 0) 1 0))))))

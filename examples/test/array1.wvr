@@ -1,0 +1,7 @@
+; Sanity Check
+
+(var x (Array Int Int))
+
+(assume true)
+(store! x 0 5)
+(assume (not (= (select x 0) 5)))
