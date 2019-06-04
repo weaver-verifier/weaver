@@ -1,0 +1,26 @@
+(var A (Int) Int)
+(var bag1 bag2 cap1 cap2 sum1 sum2 i j N Int)
+
+(assume (= bag1 bag2 sum1 sum2 i j 0))
+
+(par
+  (seq
+    (while (< i N)
+      (if (< (+ bag1 (A i)) cap1)
+        (set! bag1 (+ bag1 (A i)))
+        (seq
+          (set! sum1 (+ sum1 bag1))
+          (set! bag1 (A i))))
+      (set! i (+ i 1)))
+    (set! sum1 (+ sum1 bag1)))
+  (seq
+    (while (< j N)
+      (if (< (+ bag2 (A j)) cap2)
+        (set! bag2 (+ bag2 (A j)))
+        (seq
+          (set! sum2 (+ sum2 bag2))
+          (set! bag2 (A j))))
+      (set! j (+ j 1)))
+    (set! sum2 (+ sum2 bag2))))
+
+(assume (not (= sum1 sum2)))

@@ -1,0 +1,28 @@
+(var pos Int)
+(var d1 d2 g1 g2 Bool)
+
+(assume (and
+  (= pos 0)
+  (= d1 d2 g1 g2 true)))
+
+(par
+  (while g1
+    (if d1
+      (set! pos (+ pos 1))
+      (set! pos (- pos 1)))
+    (set! d1 (not d1))
+    (if d1
+      (cond
+        (set! g1 false)
+        (seq))))
+  (while g2
+    (if d2
+      (set! pos (+ pos 2))
+      (set! pos (- pos 2)))
+    (set! d2 (not d2))
+    (if d2
+      (cond
+        (set! g2 false)
+        (seq)))))
+
+(assume (not (= pos 0)))

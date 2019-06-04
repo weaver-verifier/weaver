@@ -1,0 +1,20 @@
+(var pos i1 i2 N Int)
+(var d1 d2 Bool)
+
+(assume (= pos i1 i2 0))
+
+(par
+  (while (< i1 (* 2 N))
+    (if d1
+      (set! pos (+ pos 1))
+      (set! pos (- pos 1)))
+    (set! d1 (not d1))
+    (set! i1 (+ i1 1)))
+  (while (< i2 (* 2 N))
+    (if d2
+      (set! pos (+ pos 2))
+      (set! pos (- pos 2)))
+    (set! d2 (not d2))
+    (set! i2 (+ i2 1))))
+
+(assume (not (= pos 0)))

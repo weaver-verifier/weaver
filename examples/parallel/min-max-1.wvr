@@ -1,0 +1,25 @@
+(var A (Int) Int)
+(var min max i j N Int)
+(var assert b1 b2 Bool)
+
+(assume (and
+  (= i j 0)
+  (= min max (A 0))
+  (= assert b1 b2 false)))
+
+(par
+  (seq
+    (set! min (A 0))
+    (set! b1 true)
+    (while (and (< 0 i) (< i N))
+      (set! min (if (< min (A i)) min (A i)))
+      (set! i (+ i 1))))
+  (seq
+    (set! max (A 0))
+    (set! b2 true)
+    (while (and (< 0 j) (< j N))
+      (set! max (if (> max (A j)) max (A j)))
+      (set! j (+ j 1))))
+  (set! assert (=> b1 b2 (<= min max))))
+
+(assume (not assert))

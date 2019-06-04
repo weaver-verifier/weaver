@@ -1,0 +1,20 @@
+(var pos Int)
+(var d1 d2 assert Bool)
+
+(assume (and
+  (= pos 0)
+  (= d1 d2 true)
+  (= assert true)))
+
+(par
+  (while assert
+    (if d1
+      (set! pos (+ pos 1))
+      (set! pos (- pos 1)))
+    (set! d1 (not d1)))
+  (while assert
+    (if d2
+      (set! pos (+ pos 2))
+      (set! pos (- pos 2)))
+    (set! d2 (not d2)))
+  (set! assert (>= pos 0)))
