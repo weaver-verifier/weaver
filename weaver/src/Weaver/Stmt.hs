@@ -2,23 +2,26 @@
     BlockArguments,
     DataKinds,
     GADTs,
+    MultiParamTypeClasses,
     OverloadedLists,
     OverloadedStrings,
     UnicodeSyntax
   #-}
 
-module Weaver.Stmt (V, mkV, Stmt (..), prove, isTriple, isSwappable) where
+module Weaver.Stmt (V, mkV, Stmt (..), prove, isTriple, isSwappable, isIndep) where
 
 import qualified Prelude as P
 import Prelude hiding (and, not)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.State (State, evalState, get, modify', put, runState)
-import Data.Dependent.Map (DMap, delete, empty, findWithDefault, foldrWithKey, insert)
+import Data.Dependent.Sum (EqTag (..))
+import Data.Dependent.Map (DMap, empty, findWithDefault, foldrWithKey, insert)
 import Data.GADT.Compare (GEq (..), GCompare (..), GOrdering (..), gcompare, geq)
 import Data.List.NonEmpty (NonEmpty)
+import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Type.Equality ((:~:) (..))
-import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var)
+import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var, imp, true)
 import Language.SMT.SExpr (SExpr (..), SExpressible (..))
 import Language.SMT.Solver (Solver, interpolate, isSatisfiable, isValid)
 import Language.SMT.Var (Var (..), Sorts (..), Rank (..))
@@ -55,6 +58,9 @@ instance Var V where
 
 newtype U a = U { toV ∷ V '( '[], a) }
 
+instance EqTag U U where
+  eqTagged (U _) (U _) x y = isJust (geq x y)
+
 instance GEq U where
   geq (U x₁) (U x₂) = do
     Refl ← geq x₁ x₂
@@ -70,7 +76,6 @@ instance GCompare U where
 data Stmt
   = Assume (Expr V Bool)
   | ∀ a. Assign (V '( '[], a)) (Expr V a)
-  | ∀ a. Havoc (V '( '[], a))
   | Atomic [Stmt]
 
 instance Eq Stmt where
@@ -93,19 +98,11 @@ instance Ord Stmt where
       GEQ → compare expr₁ expr₂
   compare (Assign _ _) _ = LT
   compare _ (Assign _ _) = GT
-  compare (Havoc x₁) (Havoc x₂) =
-    case gcompare x₁ x₂ of
-      GLT → LT
-      GGT → GT
-      GEQ → EQ
-  compare (Havoc _) _ = LT
   compare (Atomic stmts₁) (Atomic stmts₂) = compare stmts₁ stmts₂
-  compare (Atomic _) _ = GT
 
 instance SExpressible Stmt where
   toSExpr (Assume φ) = ["assume", toSExpr φ]
   toSExpr (Assign x expr) = ["set!", toSExpr x, toSExpr expr]
-  toSExpr (Havoc x) = ["havoc!", toSExpr x]
   toSExpr (Atomic stmts) = List ("atomic" : map toSExpr stmts)
 
 rename ∷ DMap U U → Expr V a → Expr V a
@@ -117,11 +114,6 @@ rename m = emap \x →
 interpret ∷ Stmt → State (DMap U U) [Expr V Bool]
 interpret (Assume φ) = (\m → [rename m φ]) <$> get
 interpret (Atomic stmts) = concat <$> traverse interpret stmts
-interpret (Havoc x) = do
-  m ← get
-  let x' = prime (toV (findWithDefault (U x) (U x) m))
-  put (insert (U x) (U x') m)
-  return []
 interpret (Assign x expr) = do
   m ← get
   let x'    = prime (toV (findWithDefault (U x) (U x) m))
@@ -138,9 +130,6 @@ subst m = ebind \x → findWithDefault (var x ()) (U x) m
 evaluate ∷ Stmt → State (DMap U (Expr V)) [Expr V Bool]
 evaluate (Assume φ) = (\m → [subst m φ]) <$> get
 evaluate (Atomic stmts) = concat <$> traverse evaluate stmts
-evaluate (Havoc x) = do
-  modify' (delete (U x))
-  return []
 evaluate (Assign x expr) = do
   modify' \m → insert (U x) (subst m expr) m
   return []
@@ -158,7 +147,10 @@ isTriple solver φ stmt ψ =
   P.not <$> isSatisfiable solver (and (shift [Assume φ, stmt, Assume (not ψ)]))
 
 isSwappable ∷ MonadIO m ⇒ Solver V → Stmt → Stmt → m Bool
-isSwappable solver stmt₁ stmt₂ = do
+isSwappable solver = isIndep solver true
+
+isIndep ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Stmt → m Bool
+isIndep solver φ stmt₁ stmt₂ = do
   let expr₁ = compress (Atomic [stmt₁, stmt₂])
       expr₂ = compress (Atomic [stmt₂, stmt₁])
-  isValid solver (eq [expr₁, expr₂])
+  isValid solver (imp [φ, eq [expr₁, expr₂]])

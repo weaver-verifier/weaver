@@ -3,11 +3,12 @@
     DeriveTraversable,
     FlexibleContexts,
     GADTs,
-    GeneralizedNewtypeDeriving,
     LambdaCase,
     OverloadedStrings,
     PatternSynonyms,
     ScopedTypeVariables,
+    TupleSections,
+    TypeOperators,
     UnicodeSyntax,
     ViewPatterns
   #-}
@@ -15,7 +16,6 @@
 module Main (main) where
 
 import           Prelude hiding (lookup, putStrLn, readFile)
-import           Control.Applicative (Alternative (..),)
 import           Control.Exception.Base (evaluate)
 import           Control.Monad (filterM, guard, when)
 import           Control.Monad.Except (runExceptT)
@@ -36,9 +36,11 @@ import qualified Data.Finite.Set.AntiMap as AM
 import           Data.Finite.Set (Set, union)
 import qualified Data.Finite.Set as Set
 import           Data.Finite.Small (Small)
-import           Data.Finite.Small.Map (Map, keys, fromListWith)
+import           Data.Finite.Small.Map (Map, keys, fromList, fromListWith)
 import qualified Data.Finite.Small.Map as Map
 import           Data.Foldable (asum, for_, toList)
+import           Data.Functor.Compose (Compose (..))
+import           Data.Functor.Product (Product (..))
 import           Data.Function (on)
 import           Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import           Data.List (permutations, sortBy, subsequences)
@@ -51,29 +53,21 @@ import           Data.Text (Text, pack)
 import           Data.Text.IO (putStrLn, readFile)
 import           Data.Traversable (for)
 import           Data.Void (Void)
-import           Language.SMT.Backend (Backend)
-import           Language.SMT.Backend.CVC4 (cvc4)
-import           Language.SMT.Backend.Hybrid (hybrid)
-import           Language.SMT.Backend.MathSAT (mathSAT)
-import           Language.SMT.Backend.SMTInterpol (smtInterpol)
-import           Language.SMT.Backend.Yices (yices)
-import           Language.SMT.Backend.Z3 (z3)
 import           Language.SMT.Expr (Expr, true, false)
 import           Language.SMT.SExpr (SExpr, parseAll, prettyPrint)
 import           Language.SMT.Solver (Solver, newSolver)
 import           Numeric.Natural (Natural)
-import           Options.Applicative (Parser, execParser, flag, option, info, long, maybeReader, metavar, short, strArgument)
 import           System.Exit (exitFailure)
 import           System.IO (hFlush, stdout)
 import           System.Clock (Clock (..), diffTimeSpec, getTime, toNanoSecs)
 import           Text.Printf (printf)
-import           Text.Read (readMaybe)
 import           Weaver.Program (Tag, Program (..), compareIndep, compile, conflicts)
-import           Weaver.Stmt (V, Stmt (..), prove, isSwappable, isTriple)
+import           Weaver.Stmt (V, Stmt (..), prove, isSwappable, isTriple, isIndep)
+import           Weaver.Options (Options (..), Method (..), DebugMode (..), TestMode (..), Bound (..), parseOptions)
 
 main ∷ IO ()
 main = do
-  Options filepath method backend debug test bound iters ← execParser (info optionsParser mempty)
+  Options filepath method backend debug test bound iters ← parseOptions
   file    ← readFile filepath
   sexprs  ← parseProgram file
   program ← compileProgram sexprs
@@ -83,81 +77,6 @@ main = do
     Nothing → putStrLn "SUCCESS"
     Just xs → do mapM_ prettyPrint xs
                  putStrLn "FAILURE"
-
-data Method
-  = FloydHoare
-  | Partition
-  | PartitionSets
-  | PartitionProgress
-  | PartitionProgressSets
-  | TotalOrder
-
-data DebugMode
-  = Debug
-  | NoDebug
-  deriving Eq
-
-data Bound
-  = NoBound
-  | BoundLeft Natural
-  | BoundRight Natural
-  | BoundMiddle Natural
-  | BoundUniform Natural
-  | BoundAzadeh Natural
-  | BoundRoundRobin
-
-data TestMode
-  = Test
-  | NoTest
-  deriving Eq
-
-data Options = Options FilePath Method (IO Backend) DebugMode TestMode Bound Natural
-
-optionsParser ∷ Parser Options
-optionsParser = Options
-    <$> strArgument (metavar "FILENAME")
-    <*> options method  "method" 'm' FloydHoare
-    <*> options backend "solver" 's' (hybrid yices mathSAT)
-    <*> flag NoDebug Debug (long "debug" <> short 'd')
-    <*> flag NoTest Test (long "test" <> short 't')
-    <*> options bound   "bound"  'b' NoBound
-    <*> options readMaybe "iterations" 'i' 0
-
-  where method  "floydhoare"              = Just FloydHoare
-        method  "partition"               = Just Partition
-        method  "partition-sets"          = Just PartitionSets
-        method  "partition-progress"      = Just PartitionProgress
-        method  "partition-progress-sets" = Just PartitionProgressSets
-        method  "total-order"             = Just TotalOrder
-        method  _                         = Nothing
-
-        backend "mathsat"             = Just mathSAT
-        backend "smtinterpol"         = Just smtInterpol
-        backend "z3"                  = Just z3
-        backend "yices-mathsat"       = Just (hybrid yices mathSAT)
-        backend "z3-mathsat"          = Just (hybrid z3 mathSAT)
-        backend "cvc4-mathsat"        = Just (hybrid cvc4 mathSAT)
-        backend "smtinterpol-mathsat" = Just (hybrid smtInterpol mathSAT)
-        backend "yices-z3"            = Just (hybrid yices z3)
-        backend "mathsat-z3"          = Just (hybrid mathSAT z3)
-        backend "cvc4-z3"             = Just (hybrid cvc4 z3)
-        backend "smtinterpol-z3"      = Just (hybrid smtInterpol z3)
-        backend "yices-smtinterpol"   = Just (hybrid yices smtInterpol)
-        backend "mathsat-smtinterpol" = Just (hybrid mathSAT smtInterpol)
-        backend "cvc4-smtinterpol"    = Just (hybrid cvc4 smtInterpol)
-        backend "z3-smtinterpol"      = Just (hybrid z3 smtInterpol)
-        backend _                     = Nothing
-
-        bound xs       | Just n ← readMaybe xs = Just (BoundLeft    n)
-        bound ('r':xs) | Just n ← readMaybe xs = Just (BoundRight   n)
-        bound ('l':xs) | Just n ← readMaybe xs = Just (BoundLeft    n)
-        bound ('m':xs) | Just n ← readMaybe xs = Just (BoundMiddle  n)
-        bound ('u':xs) | Just n ← readMaybe xs = Just (BoundUniform n)
-        bound ('a':xs) | Just n ← readMaybe xs = Just (BoundAzadeh  n)
-        bound "rr" = Just BoundRoundRobin
-        bound _ = Nothing
-
-        options f l s d = option (maybeReader f) (long l <> short s) <|> pure d
 
 parseProgram ∷ Text → IO [SExpr Void]
 parseProgram text =
@@ -211,9 +130,13 @@ data Lists' k v = Lists' [[(k, v)]]
 
 type Proof = OrdSet.Set (Expr V Bool)
 
+type (:*:) = Product
+type (:.:) = Compose
+
 verifyProgram ∷ Method → DebugMode → TestMode → Bound → Natural → Solver V → Program → IO (Maybe [Stmt])
 verifyProgram method debug test bound iters solver (Program asserts (regex ∷ Regex (Index c))) = do
   isTripleCache ← newIORef OrdMap.empty
+  isIndepCache  ← newIORef OrdMap.empty
 
   let stmts ∷ [Index c]
       stmts = toList regex
@@ -240,6 +163,17 @@ verifyProgram method debug test bound iters solver (Program asserts (regex ∷ R
             writeIORef isTripleCache (OrdMap.insert key result isTripleCache₀)
             return result
 
+      isIndep' ∷ Container s (Expr V Bool) ⇒ Index s → Index c → Index c → IO Bool
+      isIndep' φ s₁ s₂ = do
+        isIndepCache₀ ← readIORef isIndepCache
+        let key = (lookup φ, snd (lookup s₁), snd (lookup s₂))
+        case OrdMap.lookup key isIndepCache₀ of
+          Just result → return result
+          Nothing → do
+            result ← isIndep solver (lookup φ) (snd (lookup s₁)) (snd (lookup s₂))
+            writeIORef isIndepCache (OrdMap.insert key result isIndepCache₀)
+            return result
+
       proof ∷ Proof → NFAM IO (Map (Index c))
       proof π = reify (toList π) \π' →
         let unreify = (OrdMap.fromList (zip (toList π) π') OrdMap.!)
@@ -251,124 +185,48 @@ verifyProgram method debug test bound iters solver (Program asserts (regex ∷ R
               return (Edge (toRel δ) (φ == false'))
         in UnfoldM next root
 
+      indepProof ∷ Proof → NFAM IO (Map (Index c) :*: (Map (Index c) :.: Map (Index c)))
+      indepProof π = reify (toList π) \π' →
+        let unreify = (OrdMap.fromList (zip (toList π) π') OrdMap.!)
+            true'  = unreify true
+            false' = unreify false
+            root = true'
+            next φ = do
+              δ₁ ← filterM (\(s,  ψ)  → isTriple' φ s  ψ)  ((,) <$> stmts <*> π')
+              δ₂ ← mapM (\stmt → (stmt,) <$> filterM (fmap not . isIndep' φ stmt) stmts) stmts
+              let δ₃ = fmap (fromList . map (, Set.singleton false')) (fromList δ₂)
+              return (Edge (Pair (toRel δ₁) (Compose δ₃)) (φ == false'))
+        in UnfoldM next root
+
       programDFA ∷ DFA (Map (Index c))
       programDFA = toDFA (canonical regex)
 
-      partitionProgressCheck ∷ DFA (Map (Index c)) → Cex c
-      partitionProgressCheck = fromMaybe mempty
-                             . AM.lookup Set.empty
-                             . foldCut go AM.empty (not . AM.isEmpty) where
-        go ∷ (r → AntiMap (Index c) (Cex c)) → DFA.Edge (Map (Index c)) r → AntiMap (Index c) (Cex c)
-        go _ (DFA.Edge _ True)  = AM.universe Nil
-        go k (DFA.Edge δ False) = AM.intersectionsWith (<>) mempty do
-          part ← map Set.fromList (subsequences (keys δ))
-          return . AM.unions $ do
-            (a, q) ← toKeyedList δ
-            (pₘₐₓ, xss) ← AM.toList (k q)
-            let orderₐ = if Set.member a part then Set.empty else part
-                depsₐ = index deps a
-            return $
-              if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
-              then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
-              else AM.empty
+      indepProgramDFA ∷ DFA (Map (Index c) :*: (Map (Index c) :.: Map (Index c)))
+      indepProgramDFA = addIndeps programDFA
 
-      partitionProgressSetsCheck ∷ DFA (Map (Index c)) → Cex c
-      partitionProgressSetsCheck (Unfold next (root ∷ q)) =
-        fromMaybe mempty (foldCut go₁ Nothing isJust (unfold go₂ (root, Set.empty))) where
-          go₁ ∷ (r → Maybe (Cex c)) → Lists' (Index c) r → Maybe (Cex c)
-          go₁ k (Lists' xs) = do
-            ys ← traverse (asum . map (traverse k)) xs
-            case ys of
-              [] → return Nil
-              _  → return (Cons (Map.fromListWith (<>) ys))
-
-          go₂ ∷ (q, Set (Index c)) → Lists' (Index c) (q, Set (Index c))
-          go₂ (q, s) =
-            case next q of
-              DFA.Edge _ True → Lists' []
-              DFA.Edge δ False → Lists' do
-                part ← map Set.fromList (subsequences (keys δ))
-                return do
-                  (a, q') ← toKeyedList δ
-                  guard (not (Set.member a s))
-                  let orderₐ = if Set.member a part then Set.empty else part
-                      depsₐ = index deps a
-                  return (a, (q', Set.difference (Set.union s orderₐ) depsₐ))
-
-      partitionCheck ∷ DFA (Map (Index c)) → Bool
-      partitionCheck = AC.isEmpty . foldCut go AC.empty (not . AC.isEmpty) where
-        go ∷ (r → Antichain (Index c)) → DFA.Edge (Map (Index c)) r → Antichain (Index c)
-        go _ (DFA.Edge _ True) = AC.universe
-        go k (DFA.Edge δ False) = AC.intersections do
-          part ← map Set.fromList (subsequences (keys δ))
-          return . AC.unions $ do
-            (a, q) ← toKeyedList δ
-            pₘₐₓ ← AC.toList (k q)
-            let orderₐ = if Set.member a part then Set.empty else part
-                depsₐ = index deps a
-            return $
-              if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
-              then AC.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
-              else AC.empty
-
-      partitionSetsCheck ∷ DFA (Map (Index c)) → Bool
-      partitionSetsCheck (Unfold next (root ∷ q)) =
-          not (foldCut go₁ False id (unfold go₂ (root, Set.empty))) where
-        go₁ ∷ (r → Bool) → Lists r → Bool
-        go₁ k (Lists xs) = all (any k) xs
-
-        go₂ ∷ (q, Set (Index c)) → Lists (q, Set (Index c))
-        go₂ (q, s) =
-          case next q of
-            DFA.Edge _ True → Lists []
-            DFA.Edge δ False → Lists do
-              part ← map Set.fromList (subsequences (keys δ))
-              return do
-                (a, q') ← toKeyedList δ
-                guard (not (Set.member a s))
-                let orderₐ = if Set.member a part then Set.empty else part
-                    depsₐ = index deps a
-                return (q', Set.difference (Set.union s orderₐ) depsₐ)
-
-      totalOrderCheck ∷ DFA (Map (Index c)) → Bool
-      totalOrderCheck = AC.isEmpty . foldCut go AC.empty (not . AC.isEmpty) where
-        go ∷ (r → Antichain (Index c)) → DFA.Edge (Map (Index c)) r → Antichain (Index c)
-        go _ (DFA.Edge _ True) = AC.universe
-        go k (DFA.Edge δ False) = AC.intersections do
-          order ← permutations (keys δ)
-          return . AC.unions $ do
-            (a, q) ← toKeyedList δ
-            pₘₐₓ ← AC.toList (k q)
-            let orderₐ = Set.fromList (dropWhile (/= a) order)
-                depsₐ = index deps a
-            return $
-              if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
-              then AC.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
-              else AC.empty
+      addIndeps ∷ DFA (Map (Index c)) → DFA (Map (Index c) :*: (Map (Index c) :.: Map (Index c)))
+      addIndeps (Unfold next root) = Unfold next' root'
+        where root' = Just root
+              next' Nothing = DFA.Edge (Pair Map.empty (Compose Map.empty)) True
+              next' (Just (next → DFA.Edge δ b)) =
+                let ks  = keys δ
+                    ps  = fromList (map (\stmt → (stmt, filter (not . confl stmt) ks)) ks)
+                    ps' = fmap (fromList . map (, Nothing)) ps
+                    confl (lookup → (x, _)) (lookup → (y, _)) = conflicts x y
+                in DFA.Edge (Pair (fmap Just δ) (Compose ps')) b
 
       check ∷ NFA (Map (Index c)) → Cex c
       check πNFA =
         case method of
           FloydHoare            → ce
-          PartitionProgress     → partitionProgressCheck diff
-          PartitionProgressSets → partitionProgressSetsCheck diff
-          Partition             → if partitionCheck diff then mempty else ce
-          PartitionSets         → if partitionSetsCheck diff then mempty else ce
-          TotalOrder            → if totalOrderCheck diff then mempty else ce
+          PartitionProgress     → partitionProgressCheck deps diff
+          PartitionProgressSets → partitionProgressSetsCheck deps diff
+          Partition             → if partitionCheck deps diff then mempty else ce
+          PartitionSets         → if partitionSetsCheck deps diff then mempty else ce
+          TotalOrder            → if totalOrderCheck deps diff then mempty else ce
         where ce = maybe mempty singleton (find diff)
               diff = optimize (approximate (difference programDFA πDFA))
               πDFA = NFA.toDFA πNFA
-
-      bounded ∷ Cex c → [[Index c]]
-      bounded x =
-        case bound of
-          NoBound         → getCex x
-          BoundLeft  n    → selectLeft    (fromIntegral n) x
-          BoundRight n    → selectRight   (fromIntegral n) x
-          BoundMiddle n   → selectMiddle  (fromIntegral n) (getCex x)
-          BoundAzadeh n   → selectAzadeh  (fromIntegral n) (getCex x)
-          BoundUniform n  → selectUniform (fromIntegral n) (getCex x)
-          BoundRoundRobin → selectRoundRobin x
 
       interpolate ∷ [[Index c]] → Proof → IO (Either [Index c] Proof)
       interpolate [] π = return (Right π)
@@ -396,7 +254,7 @@ verifyProgram method debug test bound iters solver (Program asserts (regex ∷ R
             (vertices (optimize (NFA.toDFA πNFA)) ∷ Natural)
 
         prompt "Searching for counter-example: "
-        bounded <$> time (evaluate (check πNFA)) >>= \case
+        bounded bound <$> time (evaluate (check πNFA)) >>= \case
           [] → do
             when (debug == Debug) do
               putStrLn "[debug] ~~~ Final Proof ~~~"
@@ -407,9 +265,9 @@ verifyProgram method debug test bound iters solver (Program asserts (regex ∷ R
               let diff = optimize (approximate (difference programDFA πDFA))
                   πDFA = NFA.toDFA πNFA
               prompt "[test] Optimized   Check: "
-              _ ← time (evaluate (partitionCheck diff))
+              _ ← time (evaluate (partitionCheck deps diff))
               prompt "[test] Unoptimized Check: "
-              _ ← time (evaluate (partitionSetsCheck diff))
+              _ ← time (evaluate (partitionSetsCheck deps diff))
               return ()
             return (Nothing, n)
           cexs → do
@@ -451,6 +309,107 @@ time action = do
     (fromIntegral (toNanoSecs (diffTimeSpec start₂ end₂)) / 1000000000 ∷ Double)
   return result
 
+partitionProgressCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Cex c
+partitionProgressCheck deps = fromMaybe mempty
+                            . AM.lookup Set.empty
+                            . foldCut go AM.empty (not . AM.isEmpty) where
+  go ∷ (r → AntiMap (Index c) (Cex c)) → DFA.Edge (Map (Index c)) r → AntiMap (Index c) (Cex c)
+  go _ (DFA.Edge _ True)  = AM.universe Nil
+  go k (DFA.Edge δ False) = AM.intersectionsWith (<>) mempty do
+    part ← map Set.fromList (subsequences (keys δ))
+    return . AM.unions $ do
+      (a, q) ← toKeyedList δ
+      (pₘₐₓ, xss) ← AM.toList (k q)
+      let orderₐ = if Set.member a part then Set.empty else part
+          depsₐ = index deps a
+      return $
+        if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
+        then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
+        else AM.empty
+
+partitionProgressSetsCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Cex c
+partitionProgressSetsCheck deps (Unfold next (root ∷ q)) =
+  fromMaybe mempty (foldCut go₁ Nothing isJust (unfold go₂ (root, Set.empty))) where
+    go₁ ∷ (r → Maybe (Cex c)) → Lists' (Index c) r → Maybe (Cex c)
+    go₁ k (Lists' xs) = do
+      ys ← traverse (asum . map (traverse k)) xs
+      case ys of
+        [] → return Nil
+        _  → return (Cons (Map.fromListWith (<>) ys))
+
+    go₂ ∷ (q, Set (Index c)) → Lists' (Index c) (q, Set (Index c))
+    go₂ (q, s) =
+      case next q of
+        DFA.Edge _ True → Lists' []
+        DFA.Edge δ False → Lists' do
+          part ← map Set.fromList (subsequences (keys δ))
+          return do
+            (a, q') ← toKeyedList δ
+            guard (not (Set.member a s))
+            let orderₐ = if Set.member a part then Set.empty else part
+                depsₐ = index deps a
+            return (a, (q', Set.difference (Set.union s orderₐ) depsₐ))
+
+partitionCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Bool
+partitionCheck deps = AC.isEmpty . foldCut go AC.empty (not . AC.isEmpty) where
+  go ∷ (r → Antichain (Index c)) → DFA.Edge (Map (Index c)) r → Antichain (Index c)
+  go _ (DFA.Edge _ True) = AC.universe
+  go k (DFA.Edge δ False) = AC.intersections do
+    part ← map Set.fromList (subsequences (keys δ))
+    return . AC.unions $ do
+      (a, q) ← toKeyedList δ
+      pₘₐₓ ← AC.toList (k q)
+      let orderₐ = if Set.member a part then Set.empty else part
+          depsₐ = index deps a
+      return $
+        if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
+        then AC.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
+        else AC.empty
+
+partitionSetsCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Bool
+partitionSetsCheck deps (Unfold next (root ∷ q)) =
+    not (foldCut go₁ False id (unfold go₂ (root, Set.empty))) where
+  go₁ ∷ (r → Bool) → Lists r → Bool
+  go₁ k (Lists xs) = all (any k) xs
+
+  go₂ ∷ (q, Set (Index c)) → Lists (q, Set (Index c))
+  go₂ (q, s) =
+    case next q of
+      DFA.Edge _ True → Lists []
+      DFA.Edge δ False → Lists do
+        part ← map Set.fromList (subsequences (keys δ))
+        return do
+          (a, q') ← toKeyedList δ
+          guard (not (Set.member a s))
+          let orderₐ = if Set.member a part then Set.empty else part
+              depsₐ = index deps a
+          return (q', Set.difference (Set.union s orderₐ) depsₐ)
+
+totalOrderCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Bool
+totalOrderCheck deps = AC.isEmpty . foldCut go AC.empty (not . AC.isEmpty) where
+  go ∷ (r → Antichain (Index c)) → DFA.Edge (Map (Index c)) r → Antichain (Index c)
+  go _ (DFA.Edge _ True) = AC.universe
+  go k (DFA.Edge δ False) = AC.intersections do
+    order ← permutations (keys δ)
+    return . AC.unions $ do
+      (a, q) ← toKeyedList δ
+      pₘₐₓ ← AC.toList (k q)
+      let orderₐ = Set.fromList (dropWhile (/= a) order)
+          depsₐ = index deps a
+      return $
+        if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
+        then AC.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
+        else AC.empty
+
+bounded ∷ Container c ([Tag], a) ⇒ Bound → Cex c → [[Index c]]
+bounded NoBound          = getCex
+bounded (BoundLeft n)    = selectLeft    (fromIntegral n)
+bounded (BoundRight n)   = selectRight   (fromIntegral n)
+bounded (BoundMiddle n)  = selectMiddle  (fromIntegral n) . getCex
+bounded (BoundAzadeh n)  = selectAzadeh  (fromIntegral n) . getCex
+bounded (BoundUniform n) = selectUniform (fromIntegral n) . getCex
+bounded BoundRoundRobin  = selectRoundRobin
+
 selectLeft ∷ Container c a ⇒ Int → Cex c → [[Index c]]
 selectLeft n cex = evalState (go cex) 0
   where go Nil = do
@@ -484,7 +443,7 @@ selectRoundRobin = go []
             case dropWhile ((/= LT) . compareIndep x . fst . lookup . fst) ps of
               (k, v):_ → map (k:) (go (fst (lookup k)) v)
               _        → case ps of
-                           [] → []
+                           []       → []
                            (k, v):_ → map (k:) (go (fst (lookup k)) v)
           where ps = sortBy (compareIndep `on` fst . lookup . fst) (toKeyedList m)
 

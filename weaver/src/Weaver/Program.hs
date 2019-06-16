@@ -77,7 +77,7 @@ tag (Cat x y) = Cat (extend DepLeft (tag x)) (extend DepRight (tag y))
 tag (Par x y) = Par (extend IndepLeft (tag x)) (extend IndepRight (tag y))
 tag (Rep x) = Rep (tag x)
 
-data Program = ∀ c. Container c ([Tag], Stmt) ⇒ Program [Expr V Bool] (Regex (Index c))
+data Program = ∀c. Container c ([Tag], Stmt) ⇒ Program [Expr V Bool] (Regex (Index c))
 
 compile ∷ (MonadIO m, MonadError Text m) ⇒ [SExpr Void] → m Program
 compile ss = do
@@ -189,11 +189,6 @@ compileStmt (List ["set!", Symbol x, e]) = do
     Rank SNil        t → do
       e' ← compileExpr t e
       return (Assign x' e')
-compileStmt (List ["havoc!", Symbol x]) = do
-  This x' ← lookupVar x
-  case rank x' of
-    Rank SNil _ → return (Havoc x')
-    _           → report ["Cannot havoc! function `", x, "'"]
 compileStmt (List ("atomic" : ss)) = Atomic <$> traverse compileStmt ss
 compileStmt (List ["store!", e₁, e₂, e₃]) = compileStmt ["set!", e₁, ["store", e₁, e₂, e₃]]
 compileStmt s = report ["Unrecognized statement `", pretty s, "'"]
