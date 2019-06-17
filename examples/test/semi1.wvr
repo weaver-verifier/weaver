@@ -4,6 +4,7 @@
 
 ; If you uncomment this line and comment out the next, the proof doesn't work.
 ; This indicates that we only need to reason about the case when the increment happens first.
+;(use (= y (+ x 1)))
 (use (= x (+ y 1)))
 
 (assume (= x y))
