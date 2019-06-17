@@ -88,6 +88,7 @@ time label action = do
     label
     (fromIntegral (toNanoSecs (diffTimeSpec start₁ end₁)) / 1000000000 ∷ Double)
     (fromIntegral (toNanoSecs (diffTimeSpec start₂ end₂)) / 1000000000 ∷ Double)
+  hFlush stdout
   return result
 
 -- partitionProgressSetsCheck ∷ ∀c. Container c ([Tag], Stmt) ⇒ Map (Index c) (Set (Index c)) → DFA (Map (Index c)) → Cex c
@@ -187,6 +188,7 @@ verifyProgram debug bound iters solver (Algorithm algorithm) (Program asserts (r
         putStrLn "------------------------------"
         printf "Iteration %d\n" n
         printf "Current proof size: %d\n" (size π)
+        hFlush stdout
 
         bounded bound <$> time "Searching for counter-example" (evaluate (check π)) >>= \case
           []   → return (Nothing, n)
