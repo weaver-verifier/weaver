@@ -1,23 +1,23 @@
-(var A (Int) Int)
-(var hd tl x Int)
+(var queue (Int) Int)
+(var front size x Int)
 
 (use
-  (and (= x 5) (= hd tl))
-  (and (= (A hd) 5) (= (+ hd 1) tl))
-  (and (= (A hd) 5) (< (+ hd 1) tl))
-  (and (= x 5) (< hd tl)))
+  (and (= x 5)               (=  size 0))
+  (and (= x 5 (queue front)) (=  size 1))
+  (and (= x 5 (queue front)) (>= size 2)))
 
-(assume (and (= hd tl) (= x 5)))
+(assume (and (= size 0) (= x 5)))
 
 (par
   (loop
     (atomic
-      (assume (= (A tl) 5))
-      (set! tl (+ tl 1))))
+      (assume (= (queue (+ front size)) 5))
+      (set! size (+ size 1))))
   (loop
     (atomic
-      (assume (< hd tl))
-      (set! x (A hd))
-      (set! hd (+ hd 1)))))
+      (assume (> size 0))
+      (set! x     (queue front))
+      (set! front (+ front 1))
+      (set! size  (- size 1)))))
 
 (assume (not (= x 5)))

@@ -75,7 +75,7 @@ initialize solver (Unfold next root) φs =
 size ∷ Proof c → Int
 size (_, φs, _) = length φs
 
-check ∷ ∀c a. Container c a ⇒ Proof c -> Counterexample c
+check ∷ ∀c. Container c ([Tag], Stmt) ⇒ Proof c -> Counterexample c
 check (programDFA, _, πNFA) =
     fromMaybe mempty
     . AM.lookup Set.empty
@@ -83,14 +83,14 @@ check (programDFA, _, πNFA) =
     . approximate . optimize . difference programDFA
     $ toDFA πNFA
   where go ∷ (r → AntiMap (Index c) (Counterexample c)) → Edge (IMap c) r → AntiMap (Index c) (Counterexample c)
-        go _ (Edge _             True)  = AM.universe Nil
-        go k (Edge (IMap deps δ) False) = AM.intersectionsWith (<>) mempty do
+        go _ (Edge _               True)  = AM.universe Nil
+        go k (Edge (IMap indeps δ) False) = AM.intersectionsWith (<>) mempty do
           part ← map Set.fromList (subsequences (keys δ))
           return . AM.unions $ do
             (a, q) ← toKeyedList δ
             (pₘₐₓ, xss) ← AM.toList (k q)
             let orderₐ = if Set.member a part then Set.empty else part
-                depsₐ = index deps a
+                depsₐ = Set.complement (index indeps a)
             return $
               if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
               then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
@@ -111,24 +111,24 @@ proofToNFA ∷ (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' →
 proofToNFA (Solver' {..}) π = reify πlist \π'@(root:final:_) →
   let stmts = universe
 
-      isDependent φ (lookup → (tag₁, stmt₁)) (lookup → (tag₂, stmt₂))
-        | conflicts tag₁ tag₂ = return True
-        | otherwise = not <$> isIndep' φ stmt₁ stmt₂
+      isIndependent φ (lookup → (tag₁, stmt₁)) (lookup → (tag₂, stmt₂))
+        | conflicts tag₁ tag₂ = return False
+        | otherwise = isIndep' φ stmt₁ stmt₂
 
       next φ = do
-        deps ← mapM (\stmt → (stmt,) <$> filterM (isDependent (lookup φ) stmt) stmts) stmts
-        δ    ← mapM (\s → (s,) <$> filterM (isTriple' (lookup φ) (snd (lookup s)) . lookup) π') stmts
-        let deps' = fmap Set.fromList (Map.fromList deps)
+        indeps ← mapM (\stmt → (stmt,) <$> filterM (isIndependent (lookup φ) stmt) stmts) stmts
+        δ      ← mapM (\s → (s,) <$> filterM (isTriple' (lookup φ) (snd (lookup s)) . lookup) π') stmts
+        let indeps' = fmap Set.fromList (Map.fromList indeps)
             δ' = map (fmap Set.fromList) (filter (not . null . snd) δ)
-        when (?debug == Debug) do
+        when (?debug == Debug && False) do
           printf "[debug] ~~~ Dependence Relation for %s ~~~\n" (pretty (toSExpr (lookup φ)))
-          for_ deps \(s, ss) → do
+          for_ indeps \(s, ss) → do
             putStr "        "
             prettyPrint (snd (lookup s))
             for_ ss \s' → do
               putStr "          "
               prettyPrint (snd (lookup s'))
-        return (NFA.Edge (IMap deps' (Map.fromList δ')) (φ == final))
+        return (NFA.Edge (IMap indeps' (Map.fromList δ')) (φ == final))
 
   in UnfoldM next root
   where πlist = true : false : OrdSet.toList (OrdSet.delete true (OrdSet.delete false π))

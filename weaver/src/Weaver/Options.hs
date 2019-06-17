@@ -15,7 +15,7 @@ import           Language.SMT.Backend.SMTInterpol (smtInterpol)
 import           Language.SMT.Backend.Yices (yices)
 import           Language.SMT.Backend.Z3 (z3)
 import           Numeric.Natural (Natural)
-import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument)
+import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument, str)
 import           Text.Read (readMaybe)
 import           Weaver.Algorithm (Algorithm (..), DebugMode (..))
 import qualified Weaver.Algorithm.Normal as Normal
@@ -37,7 +37,8 @@ import           Weaver.Bound (Bound (..))
 data Options = Options
   FilePath
   Algorithm
-  (IO Backend)
+  (Maybe FilePath → IO Backend)
+  (Maybe FilePath)
   DebugMode
   Bound
   Natural
@@ -48,6 +49,7 @@ parseOptions = execParser (info optionsParser mempty)
           <$> strArgument (metavar "FILENAME")
           <*> options method  "method" 'm' Normal.algorithm
           <*> options backend "solver" 's' (hybrid yices mathSAT)
+          <*> (Just <$> option str (long "script") <|> pure Nothing)
           <*> flag NoDebug Debug (long "debug" <> short 'd')
           <*> options bound   "bound"  'b' NoBound
           <*> options readMaybe "iterations" 'i' 0
