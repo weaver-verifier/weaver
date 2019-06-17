@@ -49,7 +49,7 @@ import           Weaver.Options (Options (..), parseOptions)
 
 main ∷ IO ()
 main = do
-  Options filepath algorithm backend debug bound iters ← parseOptions
+  Options filepath algorithm backend script debug bound iters ← parseOptions
   file    ← readFile filepath
   sexprs  ← parseProgram file
   program ← compileProgram sexprs

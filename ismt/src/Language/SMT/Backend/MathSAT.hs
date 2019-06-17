@@ -18,10 +18,10 @@ import Data.Text (pack)
 import Language.SMT.Backend
 import Language.SMT.SExpr
 
-mathSAT ∷ IO Backend
-mathSAT = do
-  (send₁, recv₁) ← openPipe "mathsat" [] Nothing
-  pipe₂ ← openPipe "mathsat" [] Nothing >>= newIORef
+mathSAT ∷ Maybe FilePath → IO Backend
+mathSAT script = do
+  (send₁, recv₁) ← openPipe "mathsat" [] script
+  pipe₂ ← openPipe "mathsat" [] script >>= newIORef
   let send₂ x = do
         (f, _) ← readIORef pipe₂
         f x
