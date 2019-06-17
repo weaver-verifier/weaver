@@ -10,13 +10,13 @@ module Language.SMT.Backend.CVC4 where
 
 import Language.SMT.Backend
 
-cvc4 ∷ IO Backend
-cvc4 = do
+cvc4 ∷ Maybe FilePath → IO Backend
+cvc4 script = do
   (send, recv) ← openPipe "cvc4"
     [ "--lang", "smt2.6.1"
     , "--incremental"
     ]
-    Nothing
+    script
   send ["set-logic", "QF_AUFLIA"]
 
   let backendDeclare x ps r = send ["declare-fun", x, ps, r]

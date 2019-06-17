@@ -10,11 +10,11 @@ module Language.SMT.Backend.Yices where
 
 import Language.SMT.Backend
 
-yices ∷ IO Backend
-yices = do
+yices ∷ Maybe FilePath → IO Backend
+yices script = do
   (send, recv) ← openPipe "yices-smt2"
     ["--incremental"]
-    Nothing
+    script
   send ["set-logic", "QF_AUFLIA"]
 
   let backendDeclare x ps r = send ["declare-fun", x, ps, r]

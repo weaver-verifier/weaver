@@ -18,15 +18,15 @@ import Numeric.Natural (Natural)
 import Language.SMT.Backend
 import Language.SMT.SExpr
 
-smtInterpol ∷ MonadIO m ⇒ m Backend
-smtInterpol = liftIO $ do
+smtInterpol ∷ MonadIO m ⇒ Maybe FilePath → m Backend
+smtInterpol script = liftIO $ do
   (send, recv) ← openPipe "java"
     [ "-Xss20000k"
     , "-Xmx1500m"
     , "-noverify"
     , "de.uni_freiburg.informatik.ultimate.smtinterpol.Main"
     ]
-    Nothing
+    script
 
   let write e = send e >> recv
 

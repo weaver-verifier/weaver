@@ -12,9 +12,9 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Language.SMT.Backend
 import Language.SMT.SExpr
 
-z3 ∷ IO Backend
-z3 = do
-  (send, recv) ← openPipe "z3" ["-in"] Nothing
+z3 ∷ Maybe FilePath → IO Backend
+z3 script = do
+  (send, recv) ← openPipe "z3" ["-in"] script
 
   let backendDeclare x ps r = send ["declare-fun", x, ps, r]
 

@@ -62,7 +62,7 @@ import           Language.SMT.Expr (Expr, true, false)
 import           Language.SMT.SExpr (SExpr, parseAll, prettyPrint)
 import           Language.SMT.Solver (Solver, newSolver)
 import           Numeric.Natural (Natural)
-import           Options.Applicative (Parser, execParser, flag, option, info, long, maybeReader, metavar, short, strArgument)
+import           Options.Applicative (Parser, execParser, flag, option, info, long, maybeReader, metavar, short, str, strArgument)
 import           System.Exit (exitFailure)
 import           System.IO (hFlush, stdout)
 import           System.Clock (Clock (..), diffTimeSpec, getTime, toNanoSecs)
@@ -73,12 +73,12 @@ import           Weaver.Stmt (V, Stmt (..), prove, isSwappable, isTriple)
 
 main ∷ IO ()
 main = do
-  Options filepath method backend debug test bound iters ← execParser (info optionsParser mempty)
+  Options filepath method backend script debug bench bound iters ← execParser (info optionsParser mempty)
   file    ← readFile filepath
   sexprs  ← parseProgram file
   program ← compileProgram sexprs
-  solver  ← newSolver backend
-  result  ← verifyProgram method debug test bound iters solver program
+  solver  ← newSolver (backend script)
+  result  ← verifyProgram method debug bench bound iters solver program
   case result of
     Nothing → putStrLn "SUCCESS"
     Just xs → do mapM_ prettyPrint xs
@@ -106,20 +106,21 @@ data Bound
   | BoundAzadeh Natural
   | BoundRoundRobin
 
-data TestMode
-  = Test
-  | NoTest
+data BenchMode
+  = Bench
+  | NoBench
   deriving Eq
 
-data Options = Options FilePath Method (IO Backend) DebugMode TestMode Bound Natural
+data Options = Options FilePath Method (Maybe FilePath → IO Backend) (Maybe FilePath) DebugMode BenchMode Bound Natural
 
 optionsParser ∷ Parser Options
 optionsParser = Options
     <$> strArgument (metavar "FILENAME")
     <*> options method  "method" 'm' FloydHoare
     <*> options backend "solver" 's' (hybrid yices mathSAT)
+    <*> (Just <$> option str (long "script") <|> pure Nothing)
     <*> flag NoDebug Debug (long "debug" <> short 'd')
-    <*> flag NoTest Test (long "test" <> short 't')
+    <*> flag NoBench Bench (long "bench" <> short 'z')
     <*> options bound   "bound"  'b' NoBound
     <*> options readMaybe "iterations" 'i' 0
 
@@ -211,8 +212,8 @@ data Lists' k v = Lists' [[(k, v)]]
 
 type Proof = OrdSet.Set (Expr V Bool)
 
-verifyProgram ∷ Method → DebugMode → TestMode → Bound → Natural → Solver V → Program → IO (Maybe [Stmt])
-verifyProgram method debug test bound iters solver (Program asserts (regex ∷ Regex (Index c))) = do
+verifyProgram ∷ Method → DebugMode → BenchMode → Bound → Natural → Solver V → Program → IO (Maybe [Stmt])
+verifyProgram method debug bench bound iters solver (Program asserts (regex ∷ Regex (Index c))) = do
   isTripleCache ← newIORef OrdMap.empty
 
   let stmts ∷ [Index c]
@@ -403,12 +404,12 @@ verifyProgram method debug test bound iters solver (Program asserts (regex ∷ R
               for_ π \φ → do
                 putStr "        "
                 prettyPrint φ
-            when (test == Test) do
+            when (bench == Bench) do
               let diff = optimize (approximate (difference programDFA πDFA))
                   πDFA = NFA.toDFA πNFA
-              prompt "[test] Optimized   Check: "
+              prompt "[bench] Optimized   Check: "
               _ ← time (evaluate (partitionCheck diff))
-              prompt "[test] Unoptimized Check: "
+              prompt "[bench] Unoptimized Check: "
               _ ← time (evaluate (partitionSetsCheck diff))
               return ()
             return (Nothing, n)
