@@ -14,7 +14,16 @@ category:            Language
 
 executable weaver
   main-is:             Main.hs
-  other-modules:       Weaver.Options,
+  other-modules:       Weaver.Algorithm,
+                       Weaver.Algorithm.Normal,
+                       Weaver.Algorithm.NormalTrace,
+                       Weaver.Algorithm.Partition,
+                       Weaver.Algorithm.PartitionProgress,
+                       Weaver.Algorithm.PartitionProgressContext,
+                       Weaver.Algorithm.PartitionProgressTrace,
+                       Weaver.Bound,
+                       Weaver.Counterexample,
+                       Weaver.Options,
                        Weaver.Program,
                        Weaver.Stmt
   build-depends:       automata             ^>=0.1.0.0,
@@ -24,11 +33,12 @@ executable weaver
                        dependent-map        ^>=0.2.4.0,
                        dependent-sum        ^>=0.4,
                        finite               ^>=0.1.0.0,
-                       keys                 ^>=3.12.1,
                        ismt                 ^>=0.1.0.0,
+                       keys                 ^>=3.12.1,
                        mtl                  ^>=2.2.2,
                        optparse-applicative ^>=0.14.3.0,
-                       text                 ^>=1.2.3.1
+                       text                 ^>=1.2.3.1,
+                       these                ^>=0.7.6
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall

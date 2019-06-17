@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    RankNTypes,
+    UnicodeSyntax
+  #-}
 
 module Weaver.Options where
 
@@ -14,54 +17,51 @@ import           Language.SMT.Backend.Z3 (z3)
 import           Numeric.Natural (Natural)
 import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument)
 import           Text.Read (readMaybe)
+import           Weaver.Algorithm (Algorithm (..), DebugMode (..))
+import qualified Weaver.Algorithm.Normal as Normal
+import qualified Weaver.Algorithm.NormalTrace as NormalTrace
+import qualified Weaver.Algorithm.Partition as Partition
+import qualified Weaver.Algorithm.PartitionProgress as PartitionProgress
+import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTrace
+import qualified Weaver.Algorithm.PartitionProgressContext as PartitionProgressContext
+import           Weaver.Bound (Bound (..))
 
-data Method
-  = FloydHoare
-  | Partition
-  | PartitionSets
-  | PartitionProgress
-  | PartitionProgressSets
-  | TotalOrder
+-- data Method
+--   = FloydHoare
+--   | Partition
+--   | PartitionSets
+--   | PartitionProgress
+--   | PartitionProgressSets
+--   | TotalOrder
 
-data DebugMode
-  = Debug
-  | NoDebug
-  deriving Eq
-
-data Bound
-  = NoBound
-  | BoundLeft Natural
-  | BoundRight Natural
-  | BoundMiddle Natural
-  | BoundUniform Natural
-  | BoundAzadeh Natural
-  | BoundRoundRobin
-
-data TestMode
-  = Test
-  | NoTest
-  deriving Eq
-
-data Options = Options FilePath Method (IO Backend) DebugMode TestMode Bound Natural
+data Options = Options
+  FilePath
+  Algorithm
+  (IO Backend)
+  DebugMode
+  Bound
+  Natural
 
 parseOptions ∷ IO Options
 parseOptions = execParser (info optionsParser mempty)
   where optionsParser = Options
           <$> strArgument (metavar "FILENAME")
-          <*> options method  "method" 'm' FloydHoare
+          <*> options method  "method" 'm' Normal.algorithm
           <*> options backend "solver" 's' (hybrid yices mathSAT)
           <*> flag NoDebug Debug (long "debug" <> short 'd')
-          <*> flag NoTest Test (long "test" <> short 't')
           <*> options bound   "bound"  'b' NoBound
           <*> options readMaybe "iterations" 'i' 0
 
-        method  "floydhoare"              = Just FloydHoare
-        method  "partition"               = Just Partition
-        method  "partition-sets"          = Just PartitionSets
-        method  "partition-progress"      = Just PartitionProgress
-        method  "partition-progress-sets" = Just PartitionProgressSets
-        method  "total-order"             = Just TotalOrder
-        method  _                         = Nothing
+        method  "normal"                     = Just Normal.algorithm
+        method  "normal-trace"               = Just NormalTrace.algorithm
+        method  "partition"                  = Just Partition.algorithm
+        -- method  "partition-sets"             = Just PartitionSets
+        method  "partition-progress"         = Just PartitionProgress.algorithm
+        method  "partition-progress-trace"   = Just PartitionProgressTrace.algorithm
+        method  "partition-progress-context" = Just PartitionProgressContext.algorithm
+        -- method  "partition-progress-sets"    = Just PartitionProgressSets
+        -- method  "total-order"                = Just TotalOrder
+        method  _                            = Nothing
 
         backend "mathsat"             = Just mathSAT
         backend "smtinterpol"         = Just smtInterpol
