@@ -153,4 +153,4 @@ isIndep ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Stmt → m Bool
 isIndep solver φ stmt₁ stmt₂ = do
   let expr₁ = compress (Atomic [stmt₁, stmt₂])
       expr₂ = compress (Atomic [stmt₂, stmt₁])
-  isValid solver (imp [φ, eq [expr₁, expr₂]])
+  isValid solver (imp [φ, expr₁, expr₂])
