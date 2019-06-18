@@ -17,7 +17,7 @@ import           Language.SMT.Backend.Z3 (z3)
 import           Numeric.Natural (Natural)
 import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument, str)
 import           Text.Read (readMaybe)
-import           Weaver.Algorithm (Algorithm (..), DebugMode (..))
+import           Weaver.Algorithm (Algorithm (..), Config (..))
 import qualified Weaver.Algorithm.Normal as Normal
 import qualified Weaver.Algorithm.NormalTrace as NormalTrace
 import qualified Weaver.Algorithm.Partition as Partition
@@ -39,7 +39,7 @@ data Options = Options
   Algorithm
   (Maybe FilePath → IO Backend)
   (Maybe FilePath)
-  DebugMode
+  Config
   Bound
   Natural
 
@@ -50,7 +50,8 @@ parseOptions = execParser (info optionsParser mempty)
           <*> options method  "method" 'm' Normal.algorithm
           <*> options backend "solver" 's' (hybrid yices mathSAT)
           <*> (Just <$> option str (long "script") <|> pure Nothing)
-          <*> flag NoDebug Debug (long "debug" <> short 'd')
+          <*> (Config <$> flag False True (long "debug" <> short 'd')
+                      <*> flag False True (long "semi"))
           <*> options bound   "bound"  'b' NoBound
           <*> options readMaybe "iterations" 'i' 0
 

@@ -28,7 +28,7 @@ import           Data.List (subsequences)
 import           Data.Key (index, toKeyedList)
 import           Data.Maybe (fromMaybe)
 import           Language.SMT.Expr (true)
-import           Weaver.Algorithm (Algorithm (..), Assertions, DebugMode (..), Solver' (..), Interface (..), proofToNFA)
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, proofToNFA)
 import qualified Weaver.Algorithm.Normal as Normal
 import           Weaver.Counterexample (Counterexample (..), extend)
 import           Weaver.Program (Tag, conflicts)
@@ -79,7 +79,7 @@ check programDFA (deps, _, πNFA) =
               then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
               else AM.empty
 
-generalize ∷ (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
+generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
 generalize solver φs' (deps, φs, π) = do
   (φs'', π') ← Normal.generalize solver φs' (φs, π)
   return (deps, φs'', π')

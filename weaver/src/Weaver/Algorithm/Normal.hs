@@ -18,7 +18,7 @@ import Data.Finite.Small.Map (Map)
 import Data.Foldable (for_, foldl')
 import Data.Set ((\\))
 import Language.SMT.SExpr (prettyPrint)
-import Weaver.Algorithm (Algorithm (..), Assertions, DebugMode (..), Solver' (..), Interface (..), proofToNFA)
+import Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, debug, proofToNFA)
 import Weaver.Counterexample (Counterexample (..), singleton)
 import Weaver.Program (Tag)
 import Weaver.Stmt (Stmt)
@@ -48,10 +48,10 @@ check programDFA (_, πNFA) =
        Just xs | xs `member` πDFA → error "xs ∈ πDFA!"
        Just xs → singleton xs
 
-generalize ∷ (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
+generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
 generalize solver φs' (φs, _) = do
   let φs'' = foldl' (<>) φs φs'
-  when (?debug == Debug) do
+  when debug do
     putStrLn "[debug] ~~~ New Assertions ~~~"
     for_ (φs'' \\ φs) \φ → do
     -- for_ φs'' \φ → do

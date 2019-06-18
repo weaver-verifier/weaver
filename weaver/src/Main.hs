@@ -41,7 +41,7 @@ import           System.Exit (exitFailure)
 import           System.IO (hFlush, stdout)
 import           System.Clock (Clock (..), diffTimeSpec, getTime, toNanoSecs)
 import           Text.Printf (printf)
-import           Weaver.Algorithm (Assertions, Algorithm (..), Interface (..), Solver' (..), DebugMode (..))
+import           Weaver.Algorithm (Assertions, Algorithm (..), Interface (..), Solver' (..), Config, debug, semi)
 import           Weaver.Program (Program (..), compile)
 import           Weaver.Stmt (V, Stmt (..), prove, isTriple, isIndep)
 import           Weaver.Bound (Bound (..), bounded)
@@ -49,12 +49,13 @@ import           Weaver.Options (Options (..), parseOptions)
 
 main ∷ IO ()
 main = do
-  Options filepath algorithm backend script debug bound iters ← parseOptions
+  Options filepath algorithm backend script config bound iters ← parseOptions
   file    ← readFile filepath
   sexprs  ← parseProgram file
   program ← compileProgram sexprs
   solver  ← newSolver (backend script)
-  result  ← time "Total time" (verifyProgram debug bound iters solver algorithm program)
+  let ?config = config
+  result  ← time "Total time" (verifyProgram bound iters solver algorithm program)
   case result of
     Nothing → putStrLn "SUCCESS"
     Just xs → do mapM_ prettyPrint xs
@@ -149,8 +150,8 @@ time label action = do
 --         then AC.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
 --         else AC.empty
 
-verifyProgram ∷ DebugMode → Bound → Natural → Solver V → Algorithm → Program → IO (Maybe [Stmt])
-verifyProgram debug bound iters solver (Algorithm algorithm) (Program asserts (regex ∷ Regex (Index c))) = do
+verifyProgram ∷ (?config ∷ Config) ⇒ Bound → Natural → Solver V → Algorithm → Program → IO (Maybe [Stmt])
+verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex ∷ Regex (Index c))) = do
   isTripleCache ← newIORef OrdMap.empty
   isIndepCache  ← newIORef OrdMap.empty
 
@@ -172,15 +173,13 @@ verifyProgram debug bound iters solver (Algorithm algorithm) (Program asserts (r
         case OrdMap.lookup key isIndepCache₀ of
           Just result → return result
           Nothing → do
-            result ← isIndep solver φ s₁ s₂
+            result ← isIndep solver semi φ s₁ s₂
             writeIORef isIndepCache (OrdMap.insert key result isIndepCache₀)
             return result
 
       program = toDFA (canonical regex)
 
-  Interface initialize size check generalize ←
-    let ?debug = debug
-    in return (algorithm (Solver' {..}) program)
+  Interface initialize size check generalize ← return (algorithm (Solver' {..}) program)
 
   let loop π n = do
         when (iters /= 0 && n > iters) (error "Maximum iterations exceeded")
@@ -194,7 +193,7 @@ verifyProgram debug bound iters solver (Algorithm algorithm) (Program asserts (r
           []   → return (Nothing, n)
           cexs → do
             printf "Found %d counter-examples\n" (length cexs)
-            when (debug == Debug) do
+            when debug do
               for_ (zip cexs [0..]) \(cex, i ∷ Int) → do
                 putStrLn ("[debug] ~~~ Counter-Example " <> pack (show i) <> " ~~~")
                 for_ cex \x → do

@@ -35,10 +35,16 @@ import           Weaver.Program (Tag)
 import           Weaver.Stmt (V, Stmt)
 import           Weaver.Counterexample
 
-data DebugMode
-  = Debug
-  | NoDebug
-  deriving Eq
+data Config = Config
+  { _debug ∷ Bool
+  , _semi  ∷ Bool
+  }
+
+debug ∷ (?config ∷ Config) ⇒ Bool
+debug = _debug ?config
+
+semi ∷ (?config ∷ Config) ⇒ Bool
+semi = _semi ?config
 
 type Assertions = Set (Expr V Bool)
 
@@ -48,7 +54,7 @@ data Solver' = Solver'
   }
 
 newtype Algorithm = Algorithm (∀c.
-  (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒
+  (Container c ([Tag], Stmt), ?config ∷ Config) ⇒
   Solver' →
   DFA (Map (Index c)) →
   Interface c)

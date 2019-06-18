@@ -38,7 +38,7 @@ import qualified Data.Set as OrdSet
 import           Language.SMT.Expr (true, false)
 import           Language.SMT.SExpr (SExpressible (..), pretty, prettyPrint)
 import           Text.Printf (printf)
-import           Weaver.Algorithm (Algorithm (..), Assertions, DebugMode (..), Solver' (..), Interface (..))
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, debug)
 import           Weaver.Counterexample (Counterexample (..), extend)
 import           Weaver.Program (Tag, conflicts)
 import           Weaver.Stmt (Stmt)
@@ -66,7 +66,7 @@ instance Align (IMap c) where
 
 type Proof c = (DFA (IMap c), Assertions, NFA (IMap c))
 
-initialize ∷ ∀c. (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' → DFA (Map (Index c)) → Assertions → IO (Proof c)
+initialize ∷ ∀c. (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → DFA (Map (Index c)) → Assertions → IO (Proof c)
 initialize solver (Unfold next root) φs =
     (program', φs,) <$> lower (proofToNFA solver φs)
   where program' = Unfold next' root
@@ -96,18 +96,18 @@ check (programDFA, _, πNFA) =
               then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
               else AM.empty
 
-generalize ∷ (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
+generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)
 generalize solver φs' (program, φs, _) = do
   let φs'' = foldl' (<>) φs φs'
   π ← lower (proofToNFA solver φs'')
-  when (?debug == Debug) do
+  when debug do
     putStrLn "[debug] ~~~ New Assertions ~~~"
     for_ (OrdSet.difference φs'' φs) \φ → do
       putStr "        "
       prettyPrint φ
   return (program, φs'', π)
 
-proofToNFA ∷ (Container c ([Tag], Stmt), ?debug ∷ DebugMode) ⇒ Solver' → Assertions → NFAM IO (IMap c)
+proofToNFA ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → Assertions → NFAM IO (IMap c)
 proofToNFA (Solver' {..}) π = reify πlist \π'@(root:final:_) →
   let stmts = universe
 
@@ -120,7 +120,7 @@ proofToNFA (Solver' {..}) π = reify πlist \π'@(root:final:_) →
         δ      ← mapM (\s → (s,) <$> filterM (isTriple' (lookup φ) (snd (lookup s)) . lookup) π') stmts
         let indeps' = fmap Set.fromList (Map.fromList indeps)
             δ' = map (fmap Set.fromList) (filter (not . null . snd) δ)
-        when (?debug == Debug && False) do
+        when (debug && False) do
           printf "[debug] ~~~ Dependence Relation for %s ~~~\n" (pretty (toSExpr (lookup φ)))
           for_ indeps \(s, ss) → do
             putStr "        "

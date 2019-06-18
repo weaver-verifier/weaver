@@ -146,11 +146,11 @@ isTriple ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Expr V Bool →
 isTriple solver φ stmt ψ =
   P.not <$> isSatisfiable solver (and (shift [Assume φ, stmt, Assume (not ψ)]))
 
-isSwappable ∷ MonadIO m ⇒ Solver V → Stmt → Stmt → m Bool
-isSwappable solver = isIndep solver true
+isSwappable ∷ MonadIO m ⇒ Solver V → Bool → Stmt → Stmt → m Bool
+isSwappable solver semi = isIndep solver semi true
 
-isIndep ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Stmt → m Bool
-isIndep solver φ stmt₁ stmt₂ = do
+isIndep ∷ MonadIO m ⇒ Solver V → Bool → Expr V Bool → Stmt → Stmt → m Bool
+isIndep solver semi φ stmt₁ stmt₂ = do
   let expr₁ = compress (Atomic [stmt₁, stmt₂])
       expr₂ = compress (Atomic [stmt₂, stmt₁])
-  isValid solver (imp [φ, expr₁, expr₂])
+  isValid solver (imp [φ, (if semi then imp else eq) [expr₁, expr₂]])
