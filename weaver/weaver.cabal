@@ -15,6 +15,7 @@ category:            Language
 executable weaver
   main-is:             Main.hs
   other-modules:       Weaver.Algorithm,
+                       Weaver.Algorithm.LexNF,
                        Weaver.Algorithm.Normal,
                        Weaver.Algorithm.NormalTrace,
                        Weaver.Algorithm.Partition,

@@ -18,6 +18,7 @@ import           Numeric.Natural (Natural)
 import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument, str)
 import           Text.Read (readMaybe)
 import           Weaver.Algorithm (Algorithm (..), Config (..))
+import qualified Weaver.Algorithm.LexNF as LexNF
 import qualified Weaver.Algorithm.Normal as Normal
 import qualified Weaver.Algorithm.NormalTrace as NormalTrace
 import qualified Weaver.Algorithm.Partition as Partition
@@ -58,6 +59,7 @@ parseOptions = execParser (info optionsParser mempty)
         method  "normal"                     = Just Normal.algorithm
         method  "normal-trace"               = Just NormalTrace.algorithm
         method  "partition"                  = Just Partition.algorithm
+        method  "lex-nf"                     = Just LexNF.algorithm
         -- method  "partition-sets"             = Just PartitionSets
         method  "partition-progress"         = Just PartitionProgress.algorithm
         method  "partition-progress-trace"   = Just PartitionProgressTrace.algorithm
