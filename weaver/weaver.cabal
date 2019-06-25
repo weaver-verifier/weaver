@@ -20,6 +20,7 @@ executable weaver
                        Weaver.Algorithm.Normal,
                        Weaver.Algorithm.NormalTrace,
                        Weaver.Algorithm.Partition,
+                       Weaver.Algorithm.PartitionOpt,
                        Weaver.Algorithm.PartitionProgress,
                        Weaver.Algorithm.PartitionProgressContext,
                        Weaver.Algorithm.PartitionProgressTrace,
