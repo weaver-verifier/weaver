@@ -38,8 +38,9 @@ import qualified Data.Set as OrdSet
 import           Language.SMT.Expr (true, false)
 import           Language.SMT.SExpr (SExpressible (..), pretty, prettyPrint)
 import           Text.Printf (printf)
-import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, debug)
-import           Weaver.Counterexample (Counterexample (..), extend)
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..))
+import           Weaver.Config
+import           Weaver.Counterexample (Counterexample (..), extend')
 import           Weaver.Program (Tag, conflicts)
 import           Weaver.Stmt (Stmt)
 
@@ -93,7 +94,9 @@ check (programDFA, _, πNFA) =
                 depsₐ = Set.complement (index indeps a)
             return $
               if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
-              then AM.singleton (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ])) (extend a xss)
+              then AM.singleton
+                    (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
+                    (extend' (Set.mapStrongFst a pₘₐₓ) a xss)
               else AM.empty
 
 generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)

@@ -27,7 +27,8 @@ import qualified Data.Finite.Small.Map as Map
 import           Data.Key (index, toKeyedList)
 import           Data.Maybe (fromMaybe)
 import           Language.SMT.Expr (true)
-import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, proofToNFA)
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), proofToNFA)
+import           Weaver.Config (Config)
 import qualified Weaver.Algorithm.Normal as Normal
 import           Weaver.Counterexample (Counterexample (..), extend)
 import           Weaver.Program (Tag, conflicts)

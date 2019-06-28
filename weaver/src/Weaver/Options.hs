@@ -17,7 +17,7 @@ import           Language.SMT.Backend.Z3 (z3)
 import           Numeric.Natural (Natural)
 import           Options.Applicative (execParser, flag, option, info, long, maybeReader, metavar, short, strArgument, str)
 import           Text.Read (readMaybe)
-import           Weaver.Algorithm (Algorithm (..), Config (..))
+import           Weaver.Algorithm (Algorithm (..))
 import qualified Weaver.Algorithm.LexNF as LexNF
 import qualified Weaver.Algorithm.LexNFContext as LexNFContext
 import qualified Weaver.Algorithm.Normal as Normal
@@ -28,6 +28,7 @@ import qualified Weaver.Algorithm.PartitionProgress as PartitionProgress
 import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTrace
 import qualified Weaver.Algorithm.PartitionProgressContext as PartitionProgressContext
 import           Weaver.Bound (Bound (..))
+import           Weaver.Config (Config (..))
 
 -- data Method
 --   = FloydHoare

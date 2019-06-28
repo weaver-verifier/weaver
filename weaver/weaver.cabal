@@ -25,6 +25,7 @@ executable weaver
                        Weaver.Algorithm.PartitionProgressContext,
                        Weaver.Algorithm.PartitionProgressTrace,
                        Weaver.Bound,
+                       Weaver.Config,
                        Weaver.Counterexample,
                        Weaver.Options,
                        Weaver.Program,

@@ -3,6 +3,7 @@
     DataKinds,
     FlexibleInstances,
     GADTs,
+    ImplicitParams,
     MultiParamTypeClasses,
     OverloadedLists,
     OverloadedStrings,
@@ -10,7 +11,7 @@
     ViewPatterns
   #-}
 
-module Weaver.Stmt (V, mkV, Stmt (..), assume, assign, atomic, prove, isTriple, isSwappable, isIndep) where
+module Weaver.Stmt (V, mkV, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
 
 import qualified Prelude as P
 import Prelude hiding (and, not, null, map)
@@ -24,11 +25,12 @@ import Data.GADT.Compare (GEq (..), GCompare (..), GOrdering (..), gcompare, geq
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Data.Type.Equality ((:~:) (..))
-import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var, imp, true)
+import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var, imp)
 import Language.SMT.SExpr (SExpr (..), SExpressible (..))
 import Language.SMT.Solver (Solver, interpolate, isSatisfiable, isValid)
 import Language.SMT.Var (Var (..), Sorts (..), Rank (..))
 import Numeric.Natural (Natural)
+import Weaver.Config
 
 data V a = V Text Natural (Rank a)
 
@@ -79,25 +81,31 @@ instance GCompare U where
       GEQ → GEQ
       GGT → GGT
 
-data Stmt = Stmt [Expr V Bool] (DMap U (Expr V))
+data Stmt = Stmt Bool [Expr V Bool] (DMap U (Expr V))
   deriving (Eq, Ord)
 
+isArtificial ∷ Stmt → Bool
+isArtificial (Stmt b _ _) = b
+
+artificial ∷ Expr V Bool → Stmt
+artificial φ = Stmt True [φ] empty
+
 assume ∷ Expr V Bool → Stmt
-assume φ = Stmt [φ] empty
+assume φ = Stmt False [φ] empty
 
 assign ∷ V '( '[], a) → Expr V a → Stmt
-assign x e = Stmt [] (singleton (U x) e)
+assign x e = Stmt False [] (singleton (U x) e)
 
 atomic ∷ [Stmt] → Stmt
-atomic [] = Stmt [] empty
-atomic (Stmt φs xs : zs) =
-  let Stmt ψs ys = atomic zs
-  in  Stmt (φs ++ fmap (subst xs) ψs) (union (map (subst xs) ys) xs)
+atomic [] = Stmt False [] empty
+atomic (Stmt b φs xs : zs) =
+  let Stmt c ψs ys = atomic zs
+  in  Stmt (b || c) (φs ++ fmap (subst xs) ψs) (union (map (subst xs) ys) xs)
 
-indep ∷ Bool → Stmt → Stmt → Expr V Bool
-indep semi stmt₁ stmt₂ =
-  let Stmt φs₁ xs₁ = atomic [stmt₁, stmt₂]
-      Stmt φs₂ xs₂ = atomic [stmt₂, stmt₁]
+indep ∷ (?config ∷ Config) ⇒ Stmt → Stmt → Expr V Bool
+indep stmt₁ stmt₂ =
+  let Stmt _ φs₁ xs₁ = atomic [stmt₁, stmt₂]
+      Stmt _ φs₂ xs₂ = atomic [stmt₂, stmt₁]
       xs₁' = union xs₁ (mapWithKey (\(U k) _ → var k ()) xs₂)
       xs₂' = union xs₂ (mapWithKey (\(U k) _ → var k ()) xs₁)
       eqs  = intersectionWithKey (\_ x₁ x₂ → Const (eq [x₁, x₂])) xs₁' xs₂'
@@ -107,9 +115,9 @@ indep semi stmt₁ stmt₂ =
   in if semi then imp₁ else and [imp₁, imp₂]
 
 instance SExpressible Stmt where
-  toSExpr (Stmt [φ] xs) | null xs = ["assume", toSExpr φ]
-  toSExpr (Stmt [] (toList → [U k :=> v])) = ["set!", toSExpr k, toSExpr v]
-  toSExpr (Stmt φs xs) = List ("group" : φs' ++ xs')
+  toSExpr (Stmt _ [φ] xs) | null xs = ["assume", toSExpr φ]
+  toSExpr (Stmt _ [] (toList → [U k :=> v])) = ["set!", toSExpr k, toSExpr v]
+  toSExpr (Stmt _ φs xs) = List ("group" : φs' ++ xs')
     where φs' = fmap (\φ → ["assume", toSExpr φ]) φs
           xs' = foldrWithKey (\(U k) v → (["set!", toSExpr k, toSExpr v]:)) [] xs
 
@@ -120,7 +128,7 @@ rename m = emap \x →
     _           → x
 
 interpret ∷ Stmt → State (DMap U U) (Expr V Bool)
-interpret (Stmt φs xs) = do
+interpret (Stmt _ φs xs) = do
   m ← get
   let φs' = fmap (rename m) φs
       (m', xs') = foldrWithKey
@@ -145,8 +153,5 @@ isTriple ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Expr V Bool →
 isTriple solver φ stmt ψ =
   P.not <$> isSatisfiable solver (and (shift [assume φ, stmt, assume (not ψ)]))
 
-isSwappable ∷ MonadIO m ⇒ Solver V → Bool → Stmt → Stmt → m Bool
-isSwappable solver semi = isIndep solver semi true
-
-isIndep ∷ MonadIO m ⇒ Solver V → Bool → Expr V Bool → Stmt → Stmt → m Bool
-isIndep solver semi φ stmt₁ stmt₂ = isValid solver (imp [φ, indep semi stmt₁ stmt₂])
+isIndep ∷ (MonadIO m, ?config ∷ Config) ⇒ Solver V → Expr V Bool → Stmt → Stmt → m Bool
+isIndep solver φ stmt₁ stmt₂ = isValid solver (imp [φ, indep stmt₁ stmt₂])

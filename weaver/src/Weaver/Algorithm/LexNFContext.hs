@@ -37,7 +37,8 @@ import qualified Data.Set as OrdSet
 import           Language.SMT.Expr (true, false)
 import           Language.SMT.SExpr (SExpressible (..), pretty, prettyPrint)
 import           Text.Printf (printf)
-import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), Config, debug)
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..))
+import           Weaver.Config
 import           Weaver.Counterexample (Counterexample (..), extend)
 import           Weaver.Program (Tag, conflicts)
 import           Weaver.Stmt (Stmt)

@@ -36,7 +36,7 @@ import Data.Void (Void)
 import Language.SMT.Expr
 import Language.SMT.SExpr (SExpr (..), SExpressible (..), pretty)
 import Language.SMT.Var (Var (..), Sort (..), Sorts (..), Rank (..))
-import Weaver.Stmt (V, mkV, Stmt (..), assume, assign, atomic)
+import Weaver.Stmt (V, mkV, Stmt, assume, assign, atomic)
 
 data Tag = DepLeft | DepRight | IndepLeft | IndepRight
   deriving (Eq, Ord, Show)

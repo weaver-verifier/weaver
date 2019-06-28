@@ -24,7 +24,7 @@ import           Control.Monad (when)
 import           Control.Monad.Except (runExceptT, throwError)
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Data.Automata.Regex (Regex, canonical, toDFA)
-import           Data.Finite.Container (Index, lookup)
+import           Data.Finite.Container (Index)
 import           Data.Foldable (for_)
 import           Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
 import qualified Data.List.NonEmpty as NonEmpty
@@ -41,9 +41,10 @@ import           System.Exit (exitFailure)
 import           System.IO (hFlush, stdout)
 import           System.Clock (Clock (..), diffTimeSpec, getTime, toNanoSecs)
 import           Text.Printf (printf)
-import           Weaver.Algorithm (Assertions, Algorithm (..), Interface (..), Solver' (..), Config, debug, semi)
+import           Weaver.Algorithm (Assertions, Algorithm (..), Interface (..), Solver' (..))
+import           Weaver.Config (Config, debug)
 import           Weaver.Program (Program (..), compile)
-import           Weaver.Stmt (V, Stmt (..), prove, isTriple, isIndep)
+import           Weaver.Stmt (V, Stmt, isArtificial, prove, isTriple, isIndep)
 import           Weaver.Bound (Bound (..), bounded)
 import           Weaver.Options (Options (..), parseOptions)
 
@@ -173,7 +174,7 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
         case OrdMap.lookup key isIndepCache₀ of
           Just result → return result
           Nothing → do
-            result ← isIndep solver semi φ s₁ s₂
+            result ← isIndep solver φ s₁ s₂
             writeIORef isIndepCache (OrdMap.insert key result isIndepCache₀)
             return result
 
@@ -198,22 +199,23 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
                 putStrLn ("[debug] ~~~ Counter-Example " <> pack (show i) <> " ~~~")
                 for_ cex \x → do
                   putStr "        "
-                  prettyPrint (snd (lookup x))
+                  prettyPrint x
 
             time "Generating interpolants" (interpolate cexs) >>= \case
-              Left bad → return (Just (map (snd . lookup) bad), n)
+              Left bad → return (Just bad, n)
               Right φs → do
                 π' ← time "Generalizing proof" (generalize φs π)
                 loop π' (n + 1)
 
-      interpolate ∷ [[Index c]] → IO (Either [Index c] [Assertions])
+      interpolate ∷ [[Stmt]] → IO (Either [Stmt] [Assertions])
       interpolate = runExceptT . traverse \cex → do
-        result ← prove solver (NonEmpty.fromList (map (snd . lookup) cex))
+        result ← prove solver (NonEmpty.fromList cex)
         case result of
-          Nothing → throwError cex
+          Nothing | any isArtificial cex → return mempty
+                  | otherwise            → throwError cex
           Just π' → liftIO do
             for_ (zip3 (true:π') cex (π' ++ [false])) \(φ, x, ψ) →
-              modifyIORef' isTripleCache (OrdMap.insert (φ, snd (lookup x), ψ) True)
+              modifyIORef' isTripleCache (OrdMap.insert (φ, x, ψ) True)
             return (OrdSet.fromList π')
 
   π ← time "Initializing" (initialize (OrdSet.fromList asserts))

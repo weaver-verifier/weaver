@@ -3,6 +3,7 @@
     DeriveTraversable,
     FlexibleContexts,
     GADTs,
+    ImplicitParams,
     LambdaCase,
     OverloadedStrings,
     PatternSynonyms,
@@ -15,18 +16,20 @@
     ViewPatterns
   #-}
 
-module Weaver.Bound where
+module Weaver.Bound (Bound (..), bounded) where
 
 import Prelude hiding (lookup)
 import Control.Monad.State (evalState, get, modify')
-import Data.Finite.Container (Container, Index, lookup)
+import Data.Finite.Container (Container, lookup)
 import Data.Function (on)
 import Data.List (sortBy)
 import Data.Key (toKeyedList)
 import Data.Traversable (for)
 import Numeric.Natural (Natural)
-import Weaver.Counterexample (Counterexample (..), getCex)
+import Weaver.Counterexample (Counterexample (..), getCex, indeps)
+import Weaver.Config
 import Weaver.Program (Tag, compareIndep)
+import Weaver.Stmt (Stmt)
 
 data Bound
   = NoBound
@@ -37,7 +40,7 @@ data Bound
   | BoundAzadeh Natural
   | BoundRoundRobin
 
-bounded ∷ Container c ([Tag], a) ⇒ Bound → Counterexample c → [[Index c]]
+bounded ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Bound → Counterexample c → [[Stmt]]
 bounded NoBound          = getCex
 bounded (BoundLeft n)    = selectLeft    (fromIntegral n)
 bounded (BoundRight n)   = selectRight   (fromIntegral n)
@@ -46,41 +49,41 @@ bounded (BoundAzadeh n)  = selectAzadeh  (fromIntegral n) . getCex
 bounded (BoundUniform n) = selectUniform (fromIntegral n) . getCex
 bounded BoundRoundRobin  = selectRoundRobin
 
-selectLeft ∷ Container c a ⇒ Int → Counterexample c → [[Index c]]
+selectLeft ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Int → Counterexample c → [[Stmt]]
 selectLeft n cex = evalState (go cex) 0
   where go Nil = do
           modify' (+ 1)
           return [[]]
-        go (Cons m) =
-          concat <$> for (toKeyedList m) \(k, v) → do
+        go (Cons c m) =
+          (indeps c ++) . concat <$> for (toKeyedList m) \(k, v) → do
             i ← get
             if i < n then
-              map (k:) <$> go v
+              map (snd (lookup k):) <$> go v
             else
               return []
 
-selectRight ∷ Container c a ⇒ Int → Counterexample c → [[Index c]]
+selectRight ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Int → Counterexample c → [[Stmt]]
 selectRight n cex = evalState (go cex) 0
   where go Nil = do
           modify' (+ 1)
           return [[]]
-        go (Cons m) =
-          concat <$> for (reverse (toKeyedList m)) \(k, v) → do
+        go (Cons c m) =
+          (indeps c ++) . concat <$> for (reverse (toKeyedList m)) \(k, v) → do
             i ← get
             if i < n then
-              map (k:) <$> go v
+              map (snd (lookup k):) <$> go v
             else
               return []
 
-selectRoundRobin ∷ Container c ([Tag], a) ⇒ Counterexample c → [[Index c]]
+selectRoundRobin ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Counterexample c → [[Stmt]]
 selectRoundRobin = go []
   where go _ Nil = [[]]
-        go x (Cons m) =
+        go x (Cons c m) = indeps c ++
             case dropWhile ((/= LT) . compareIndep x . fst . lookup . fst) ps of
-              (k, v):_ → map (k:) (go (fst (lookup k)) v)
+              (k, v):_ → map (snd (lookup k):) (go (fst (lookup k)) v)
               _        → case ps of
                            []       → []
-                           (k, v):_ → map (k:) (go (fst (lookup k)) v)
+                           (k, v):_ → map (snd (lookup k):) (go (fst (lookup k)) v)
           where ps = sortBy (compareIndep `on` fst . lookup . fst) (toKeyedList m)
 
 selectMiddle ∷ Int → [a] → [a]
