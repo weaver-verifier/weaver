@@ -1,0 +1,10 @@
+(var x Int)
+
+(assume (= x 0))
+
+(atomic
+  (set! x (+ x 5))
+  (assume (< x 5))
+  (set! x (- x x)))
+
+(assume (not (= x 10)))

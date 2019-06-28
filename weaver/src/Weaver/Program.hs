@@ -36,7 +36,7 @@ import Data.Void (Void)
 import Language.SMT.Expr
 import Language.SMT.SExpr (SExpr (..), SExpressible (..), pretty)
 import Language.SMT.Var (Var (..), Sort (..), Sorts (..), Rank (..))
-import Weaver.Stmt (V, mkV, Stmt (..))
+import Weaver.Stmt (V, mkV, Stmt (..), assume, assign, atomic)
 
 data Tag = DepLeft | DepRight | IndepLeft | IndepRight
   deriving (Eq, Ord, Show)
@@ -181,15 +181,15 @@ compileStmts (List ["if", e, s]) = compileStmts
 compileStmts s = Sym <$> compileStmt s
 
 compileStmt ∷ (MonadReader Env m, MonadError Text m) ⇒ SExpr Void → m Stmt
-compileStmt (List ["assume", e]) = Assume <$> compileExpr Bool e
+compileStmt (List ["assume", e]) = assume <$> compileExpr Bool e
 compileStmt (List ["set!", Symbol x, e]) = do
   This x' ← lookupVar x
   case rank x' of
     Rank (SCons _ _) _ → report ["Cannot set! function `", x, "'"]
     Rank SNil        t → do
       e' ← compileExpr t e
-      return (Assign x' e')
-compileStmt (List ("atomic" : ss)) = Atomic <$> traverse compileStmt ss
+      return (assign x' e')
+compileStmt (List ("atomic" : ss)) = atomic <$> traverse compileStmt ss
 compileStmt (List ["store!", e₁, e₂, e₃]) = compileStmt ["set!", e₁, ["store", e₁, e₂, e₃]]
 compileStmt s = report ["Unrecognized statement `", pretty s, "'"]
 
