@@ -96,7 +96,7 @@ check (programDFA, _, πNFA) =
               if Set.isSubsetOf (Set.difference orderₐ depsₐ) pₘₐₓ
               then AM.singleton
                     (Set.delete a (Set.unions [pₘₐₓ, orderₐ, depsₐ]))
-                    (extend' (Set.mapStrongFst a pₘₐₓ) a xss)
+                    (extend' (Set.mapStrongFst a (Set.filter (not . conflicts (fst (lookup a)) . fst . lookup) pₘₐₓ)) a xss)
               else AM.empty
 
 generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [Assertions] → Proof c → IO (Proof c)

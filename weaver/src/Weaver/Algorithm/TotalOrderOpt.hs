@@ -8,7 +8,7 @@
     ViewPatterns
   #-}
 
-module Weaver.Algorithm.PartitionOpt where
+module Weaver.Algorithm.TotalOrderOpt where
 
 import           Data.Automata.DFA (DFA, Edge (..), approximate, difference, find)
 import           Data.Automata.NFA (toDFA)
