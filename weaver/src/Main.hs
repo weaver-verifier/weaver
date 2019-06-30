@@ -186,16 +186,15 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
   Interface initialize size check generalize display ← return (algorithm (Solver' {..}) program)
 
   let loop π n = do
+        when (iters /= 0 && n > iters) (error "Maximum iterations exceeded")
+
+        putStrLn "------------------------------"
+        printf "Iteration %d\n" n
         end₁   ← getTime Monotonic
         end₂   ← getTime ProcessCPUTime
         printf "Elapsed Time: [real] %0.6fs [process] %0.6fs\n"
           (fromIntegral (toNanoSecs (diffTimeSpec start₁ end₁)) / 1000000000 ∷ Double)
           (fromIntegral (toNanoSecs (diffTimeSpec start₂ end₂)) / 1000000000 ∷ Double)
-
-        when (iters /= 0 && n > iters) (error "Maximum iterations exceeded")
-
-        putStrLn "------------------------------"
-        printf "Iteration %d\n" n
         printf "Current proof size: %d\n" (size π)
         hFlush stdout
 
