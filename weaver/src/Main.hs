@@ -153,6 +153,9 @@ time label action = do
 
 verifyProgram ∷ (?config ∷ Config) ⇒ Bound → Natural → Solver V → Algorithm → Program → IO (Maybe [Stmt])
 verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex ∷ Regex (Index c))) = do
+  start₁ ← getTime Monotonic
+  start₂ ← getTime ProcessCPUTime
+
   isTripleCache ← newIORef OrdMap.empty
   isIndepCache  ← newIORef OrdMap.empty
 
@@ -180,9 +183,15 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
 
       program = toDFA (canonical regex)
 
-  Interface initialize size check generalize ← return (algorithm (Solver' {..}) program)
+  Interface initialize size check generalize display ← return (algorithm (Solver' {..}) program)
 
   let loop π n = do
+        end₁   ← getTime Monotonic
+        end₂   ← getTime ProcessCPUTime
+        printf "Elapsed Time: [real] %0.6fs [process] %0.6fs\n"
+          (fromIntegral (toNanoSecs (diffTimeSpec start₁ end₁)) / 1000000000 ∷ Double)
+          (fromIntegral (toNanoSecs (diffTimeSpec start₂ end₂)) / 1000000000 ∷ Double)
+
         when (iters /= 0 && n > iters) (error "Maximum iterations exceeded")
 
         putStrLn "------------------------------"
@@ -191,7 +200,9 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
         hFlush stdout
 
         bounded bound <$> time "Searching for counter-example" (evaluate (check π)) >>= \case
-          []   → return (Nothing, n)
+          []   → do
+            display π
+            return (Nothing, n)
           cexs → do
             printf "Found %d counter-examples\n" (length cexs)
             when debug do
@@ -218,7 +229,7 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
               modifyIORef' isTripleCache (OrdMap.insert (φ, x, ψ) True)
             return (OrdSet.fromList π')
 
-  π ← time "Initializing" (initialize (OrdSet.fromList asserts))
+  π ← time "Initializing" (initialize (OrdSet.fromList (true : false : asserts)))
 
   (result, n) ← loop π 1
   printf "Iterations: %d\n" n

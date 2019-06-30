@@ -38,6 +38,7 @@ algorithm = Algorithm \solver program → Interface
   size
   check
   (generalize solver)
+  (const (return ()))
 
 type Proof c = (Map (Index c) (Set (Index c)), NormalTrace.Proof c)
 

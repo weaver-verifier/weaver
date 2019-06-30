@@ -40,6 +40,7 @@ algorithm = Algorithm \solver program → Interface
   size
   (check program)
   (generalize solver)
+  (\(_, φs, _) → Normal.display φs)
 
 type Proof c = (Map (Index c) (Set (Index c)), Assertions, NFA (Map (Index c)))
 

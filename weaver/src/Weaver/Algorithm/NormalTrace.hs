@@ -25,6 +25,7 @@ algorithm = Algorithm \solver program → Interface
   size
   check
   (generalize solver)
+  (const (return ()))
 
 type Proof c = DFA (Map (Index c))
 

@@ -41,7 +41,7 @@ smtInterpol script = liftIO $ do
   success ["set-option", ":simplify-interpolants", "true"]
   success ["set-option", ":print-terms-cse", "false"]
   success ["set-option", ":proof-transformation", "LURPI"]
-  success ["set-logic", "QF_UFLIA"]
+  success ["set-logic", "QF_AUFLIA"]
 
   let backendDeclare x ps r = success ["declare-fun", x, ps, r]
 

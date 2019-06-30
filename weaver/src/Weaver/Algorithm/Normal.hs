@@ -30,6 +30,7 @@ algorithm = Algorithm \solver program → Interface
   size
   (check program)
   (generalize solver)
+  (display . fst)
 
 type Proof c = (Assertions, NFA (Map (Index c)))
 
@@ -59,3 +60,8 @@ generalize solver φs' (φs, _) = do
       putStr "        "
       prettyPrint φ
   initialize solver φs''
+
+display ∷ (?config ∷ Config) ⇒ Assertions → IO ()
+display φs = when debug do
+  putStrLn "[debug] Final Proof"
+  mapM_ (\φ → putStr "        " >> prettyPrint φ) φs

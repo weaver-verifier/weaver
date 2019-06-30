@@ -38,6 +38,7 @@ import           Language.SMT.Expr (true, false)
 import           Language.SMT.SExpr (SExpressible (..), pretty, prettyPrint)
 import           Text.Printf (printf)
 import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..))
+import qualified Weaver.Algorithm.Normal as Normal
 import           Weaver.Config
 import           Weaver.Counterexample (Counterexample (..), extend)
 import           Weaver.Program (Tag, conflicts)
@@ -49,6 +50,7 @@ algorithm = Algorithm \solver program → Interface
   size
   check
   (generalize solver)
+  (\(_, φs, _) → Normal.display φs)
 
 data IMap c q = IMap (Map (Index c) (Set (Index c))) (Map (Index c) q)
   deriving (Foldable, Functor)

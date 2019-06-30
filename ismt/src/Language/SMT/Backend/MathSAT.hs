@@ -29,8 +29,8 @@ mathSAT script = do
         (_, f) ← readIORef pipe₂
         f
 
-  send₁ ["set-logic", "QF_AXLIA"]
-  send₂ ["set-logic", "QF_AXLIA"]
+  send₁ ["set-logic", "QF_AUFLIA"]
+  send₂ ["set-logic", "QF_AUFLIA"]
   send₂ ["set-option", ":produce-interpolants", "true"]
 
   decls ← newIORef []

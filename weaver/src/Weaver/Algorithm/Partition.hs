@@ -22,6 +22,7 @@ import           Data.List (subsequences)
 import           Data.Key (index, toKeyedList)
 import           Weaver.Algorithm (Algorithm (..), Interface (..))
 import           Weaver.Algorithm.PartitionProgress (Proof, initialize, size, generalize)
+import           Weaver.Algorithm.Normal (display)
 import           Weaver.Counterexample (Counterexample (..), singleton)
 
 algorithm ∷ Algorithm
@@ -30,6 +31,7 @@ algorithm = Algorithm \solver program → Interface
   size
   (check program)
   (generalize solver)
+  (\(_, φs, _) → display φs)
 
 check ∷ ∀c a. Container c a ⇒ DFA (Map (Index c)) → Proof c -> Counterexample c
 check programDFA (deps, _, πNFA)
