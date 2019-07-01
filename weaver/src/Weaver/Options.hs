@@ -26,17 +26,10 @@ import qualified Weaver.Algorithm.Partition as Partition
 import qualified Weaver.Algorithm.PartitionProgress as PartitionProgress
 import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTrace
 import qualified Weaver.Algorithm.PartitionProgressContext as PartitionProgressContext
-import qualified Weaver.Algorithm.TotalOrderOpt as TotalOrderOpt
+import qualified Weaver.Algorithm.TotalOpt as TotalOpt
+import qualified Weaver.Algorithm.TotalProgressOpt as TotalProgressOpt
 import           Weaver.Bound (Bound (..))
 import           Weaver.Config (Config (..))
-
--- data Method
---   = FloydHoare
---   | Partition
---   | PartitionSets
---   | PartitionProgress
---   | PartitionProgressSets
---   | TotalOrder
 
 data Options = Options
   FilePath
@@ -68,9 +61,10 @@ parseOptions = execParser (info optionsParser mempty)
         method  "partition-progress"         = Just PartitionProgress.algorithm
         method  "partition-progress-trace"   = Just PartitionProgressTrace.algorithm
         method  "partition-progress-context" = Just PartitionProgressContext.algorithm
-        method  "total-order-opt"            = Just TotalOrderOpt.algorithm
+        method  "total-order-opt"            = Just TotalOpt.algorithm
+        method  "total-order-progress-opt"   = Just TotalProgressOpt.algorithm
         -- method  "partition-progress-sets"    = Just PartitionProgressSets
-        -- method  "total-order"                = Just TotalOrder
+        -- method  "total-order"                = Just Total
         method  _                            = Nothing
 
         backend "mathsat"             = Just mathSAT
