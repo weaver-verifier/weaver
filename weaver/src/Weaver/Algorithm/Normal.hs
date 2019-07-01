@@ -63,5 +63,5 @@ generalize solver φs' (φs, _) = do
 
 display ∷ (?config ∷ Config) ⇒ Assertions → IO ()
 display φs = when debug do
-  putStrLn "[debug] Final Proof"
+  putStrLn "[debug] ~~~ Final Proof ~~~"
   mapM_ (\φ → putStr "        " >> prettyPrint φ) φs

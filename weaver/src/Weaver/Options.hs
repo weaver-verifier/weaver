@@ -28,6 +28,7 @@ import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTra
 import qualified Weaver.Algorithm.PartitionProgressContext as PartitionProgressContext
 import qualified Weaver.Algorithm.TotalOpt as TotalOpt
 import qualified Weaver.Algorithm.TotalProgressOpt as TotalProgressOpt
+import qualified Weaver.Algorithm.TotalProgressContextOpt as TotalProgressContextOpt
 import           Weaver.Bound (Bound (..))
 import           Weaver.Config (Config (..))
 
@@ -63,6 +64,7 @@ parseOptions = execParser (info optionsParser mempty)
         method  "partition-progress-context" = Just PartitionProgressContext.algorithm
         method  "total-opt"                  = Just TotalOpt.algorithm
         method  "total-progress-opt"         = Just TotalProgressOpt.algorithm
+        method  "total-progress-context-opt" = Just TotalProgressContextOpt.algorithm
         -- method  "partition-progress-sets"    = Just PartitionProgressSets
         -- method  "total-order"                = Just Total
         method  _                            = Nothing
