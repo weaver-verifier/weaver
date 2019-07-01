@@ -158,6 +158,7 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
 
   isTripleCache ← newIORef OrdMap.empty
   isIndepCache  ← newIORef OrdMap.empty
+  invalidCache  ← newIORef OrdSet.empty
 
   let isTriple' ∷ Expr V Bool → Stmt → Expr V Bool → IO Bool
       isTriple' φ s ψ = do
@@ -219,14 +220,19 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
 
       interpolate ∷ [[Stmt]] → IO (Either [Stmt] [Assertions])
       interpolate = runExceptT . traverse \cex → do
-        result ← prove solver (NonEmpty.fromList cex)
-        case result of
-          Nothing | any isArtificial cex → return mempty
-                  | otherwise            → throwError cex
-          Just π' → liftIO do
-            for_ (zip3 (true:π') cex (π' ++ [false])) \(φ, x, ψ) →
-              modifyIORef' isTripleCache (OrdMap.insert (φ, x, ψ) True)
-            return (OrdSet.fromList π')
+        invalidCache₀ ← liftIO (readIORef invalidCache)
+        if OrdSet.member cex invalidCache₀
+        then return mempty
+        else do
+          result ← prove solver (NonEmpty.fromList cex)
+          case result of
+            Nothing | any isArtificial cex → do liftIO (writeIORef invalidCache (OrdSet.insert cex invalidCache₀))
+                                                return mempty
+                    | otherwise            → throwError cex
+            Just π' → liftIO do
+              for_ (zip3 (true:π') cex (π' ++ [false])) \(φ, x, ψ) →
+                modifyIORef' isTripleCache (OrdMap.insert (φ, x, ψ) True)
+              return (OrdSet.fromList π')
 
   π ← time "Initializing" (initialize (OrdSet.fromList (true : false : asserts)))
 
