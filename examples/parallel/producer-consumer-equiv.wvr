@@ -1,0 +1,34 @@
+(var produce update (Int) Int)
+(var done (Int) Bool)
+(var consume (Int Int) Int)
+(var queue1 (Int) Int)
+(var front1 size1 state11 state12 Int)
+(var finished1 Bool)
+(var state21 state22 Int)
+(var finished2 Bool)
+
+(assume
+  (and (= state11 state21)
+       (= state12 state22)
+       (= finished1 finished2 false)
+       (= size1 0)))
+
+(par
+  (while (not finished1)
+    (atomic
+      (assume (= (queue1 (+ front1 size1)) (produce state11)))
+      (set! size1 (+ size1 1)))
+    (set! state11   (update state11))
+    (set! finished1 (done   state11)))
+  (while (or (not finished1) (> size1 0))
+    (atomic
+      (assume (> size1 0))
+      (set! state12 (consume state12 (queue1 front1)))
+      (set! front1  (+ front1 1))
+      (set! size1   (- size1  1))))
+  (while (not finished2)
+    (set! state22   (consume state22 (produce state21)))
+    (set! state21   (update  state21))
+    (set! finished2 (done    state21))))
+
+(assume (not (= state12 state22)))
