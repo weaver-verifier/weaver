@@ -1,7 +1,9 @@
 {-# LANGUAGE
     BlockArguments,
     FlexibleContexts,
+    ImplicitParams,
     MonoLocalBinds,
+    OverloadedStrings,
     ScopedTypeVariables,
     TupleSections,
     UnicodeSyntax,
@@ -10,8 +12,8 @@
 
 module Weaver.Algorithm.PartitionProgressTrace where
 
-import           Prelude hiding (lookup)
-import           Control.Monad (filterM)
+import           Prelude hiding (lookup, putStr)
+import           Control.Monad (filterM, unless, when)
 import           Data.Automata.DFA (DFA, Edge (..))
 import           Data.Automata.Graph (foldCut)
 import           Data.Finite.Container (Container, Index, lookup)
@@ -22,13 +24,17 @@ import           Data.Finite.Set.AntiMap (AntiMap)
 import qualified Data.Finite.Set.AntiMap as AM
 import           Data.Finite.Small.Map (Map, keys)
 import qualified Data.Finite.Small.Map as Map
+import           Data.Foldable (for_)
 import           Data.List (subsequences)
 import           Data.Key (index, toKeyedList)
 import           Data.Maybe (fromMaybe)
+import           Data.Text.IO (putStr)
 import           Language.SMT.Expr (true)
+import           Language.SMT.SExpr (SExpressible (..), pretty)
 import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..))
 import qualified Weaver.Algorithm.NormalTrace as NormalTrace
 import           Weaver.Counterexample (Counterexample (..), extend)
+import           Weaver.Config (Config, debug)
 import           Weaver.Program (Tag, conflicts)
 import           Weaver.Stmt (Stmt)
 
@@ -43,13 +49,24 @@ algorithm = Algorithm \solver program → Interface
 
 type Proof c = (Map (Index c) (Set (Index c)), NormalTrace.Proof c)
 
-initialize ∷ ∀c. Container c ([Tag], Stmt) ⇒ Solver' → DFA (Map (Index c)) → Assertions → IO (Proof c)
+initialize ∷ ∀c. (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → DFA (Map (Index c)) → Assertions → IO (Proof c)
 initialize solver program φs = do
   let stmts = universe
 
       isDependent (lookup → (tag₁, stmt₁)) (lookup → (tag₂, stmt₂))
         | conflicts tag₁ tag₂ = return True
         | otherwise = not <$> isIndep' solver true stmt₁ stmt₂
+
+  when debug do
+    putStrLn "[debug] ~~~ Independence Relation ~~~"
+    for_ ((,) <$> stmts <*> stmts) \(stmt₁, stmt₂) → do
+      dep ← isDependent stmt₁ stmt₂
+      unless dep do
+        putStr "        "
+        putStr (pretty (toSExpr (snd (lookup stmt₁))))
+        putStr " "
+        putStr (pretty (toSExpr (snd (lookup stmt₂))))
+        putStrLn ""
 
   deps ← mapM (\stmt → (stmt,) <$> filterM (isDependent stmt) stmts) stmts
   (fmap Set.fromList (Map.fromList deps),) <$> NormalTrace.initialize solver program φs
