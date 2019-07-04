@@ -49,7 +49,8 @@ parseOptions = execParser (info optionsParser mempty)
           <*> options backend "solver" 's' (hybrid yices mathSAT)
           <*> (Just <$> option str (long "script") <|> pure Nothing)
           <*> (Config <$> flag False True (long "debug" <> short 'd')
-                      <*> flag False True (long "semi"))
+                      <*> flag False True (long "semi")
+                      <*> flag False True (long "minimize"))
           <*> options bound   "bound"  'b' NoBound
           <*> options readMaybe "iterations" 'i' 0
 

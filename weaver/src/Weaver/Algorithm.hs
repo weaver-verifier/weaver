@@ -55,6 +55,7 @@ data Interface c = ∀π. Interface
   (π → Counterexample c)    -- Check
   ([Assertions] → π → IO π) -- Generalize
   (π → IO ())               -- Display
+  (π → [IO π])              -- Shrink
 
 proofToNFA ∷ Container c ([Tag], Stmt) ⇒ Solver' → Assertions → NFAM IO (Map (Index c))
 proofToNFA (Solver' {..}) π = reify πlist \π'@(root:final:_) →

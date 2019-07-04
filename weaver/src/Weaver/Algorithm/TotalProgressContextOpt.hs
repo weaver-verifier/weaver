@@ -24,7 +24,7 @@ import           Data.List (foldl', subsequences)
 import           Data.Key (index, toKeyedList)
 import           Data.Maybe (fromMaybe)
 import           Weaver.Algorithm (Algorithm (..), Interface (..))
-import           Weaver.Algorithm.PartitionProgressContext (Proof, IMap (..), initialize, size, generalize)
+import           Weaver.Algorithm.PartitionProgressContext (Proof, IMap (..), initialize, size, generalize, shrink)
 import           Weaver.Algorithm.Normal (display)
 import           Weaver.Counterexample (Counterexample (..), extend')
 import           Weaver.Program (Tag, conflicts)
@@ -37,6 +37,7 @@ algorithm = Algorithm \solver program → Interface
   check
   (generalize solver)
   (\(_, φs, _) → display φs)
+  (shrink solver)
 
 check ∷ ∀c. Container c ([Tag], Stmt) ⇒ Proof c -> Counterexample c
 check (programDFA, _, πNFA) =

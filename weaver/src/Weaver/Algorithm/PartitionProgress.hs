@@ -24,9 +24,10 @@ import           Data.Finite.Set.AntiMap (AntiMap)
 import qualified Data.Finite.Set.AntiMap as AM
 import           Data.Finite.Small.Map (Map, keys)
 import qualified Data.Finite.Small.Map as Map
-import           Data.List (subsequences)
 import           Data.Key (index, toKeyedList)
+import           Data.List (subsequences)
 import           Data.Maybe (fromMaybe)
+import           Data.Set (fromDistinctAscList, toAscList)
 import           Language.SMT.Expr (true)
 import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), proofToNFA)
 import qualified Weaver.Algorithm.Normal as Normal
@@ -42,6 +43,7 @@ algorithm = Algorithm \solver program → Interface
   (check program)
   (generalize solver)
   (\(_, φs, _) → Normal.display φs)
+  (shrink solver)
 
 type Proof c = (Map (Index c) (Set (Index c)), Assertions, NFA (Map (Index c)))
 
@@ -85,3 +87,12 @@ generalize ∷ (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → [
 generalize solver φs' (deps, φs, π) = do
   (φs'', π') ← Normal.generalize solver φs' (φs, π)
   return (deps, φs'', π')
+
+shrink ∷ (?config ∷ Config, Container c ([Tag], Stmt)) ⇒ Solver' → Proof c → [IO (Proof c)]
+shrink solver (indeps, φs, _)
+    = map (\φs' → (indeps, φs',) <$> lower (proofToNFA solver φs'))
+    . map fromDistinctAscList
+    . deletes
+    $ toAscList φs
+  where deletes [] = []
+        deletes (x:xs) = xs : map (x:) (deletes xs)

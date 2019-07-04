@@ -42,7 +42,7 @@ import           System.IO (hFlush, stdout)
 import           System.Clock (Clock (..), diffTimeSpec, getTime, toNanoSecs)
 import           Text.Printf (printf)
 import           Weaver.Algorithm (Assertions, Algorithm (..), Interface (..), Solver' (..))
-import           Weaver.Config (Config, debug)
+import           Weaver.Config (Config, debug, minimize)
 import           Weaver.Program (Program (..), compile)
 import           Weaver.Stmt (V, Stmt, isArtificial, prove, isTriple, isIndep)
 import           Weaver.Bound (Bound (..), bounded)
@@ -184,7 +184,7 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
 
       program = toDFA (canonical regex)
 
-  Interface initialize size check generalize display ← return (algorithm (Solver' {..}) program)
+  Interface initialize size check generalize display shrink ← return (algorithm (Solver' {..}) program)
 
   let loop π n = do
         when (iters /= 0 && n > iters) (error "Maximum iterations exceeded")
@@ -201,7 +201,8 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
 
         bounded bound <$> time "Searching for counter-example" (evaluate (check π)) >>= \case
           []   → do
-            display π
+            π' ← if debug && minimize then shrink' π else return π
+            display π'
             return (Nothing, n)
           cexs → do
             printf "Found %d counter-examples\n" (length cexs)
@@ -217,6 +218,16 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
               Right φs → do
                 π' ← time "Generalizing proof" (generalize φs π)
                 loop π' (n + 1)
+
+      shrink' π = do
+        putStrLn "Shrinking..."
+        hFlush stdout
+        findM (null . bounded bound . check) (shrink π) >>= \case
+          Nothing → return π
+          Just π' → shrink' π'
+
+      findM _ [] = return Nothing
+      findM f (x:xs) = x >>= \y → if f y then return (Just y) else findM f xs
 
       interpolate ∷ [[Stmt]] → IO (Either [Stmt] [Assertions])
       interpolate = runExceptT . traverse \cex → do

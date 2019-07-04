@@ -52,6 +52,7 @@ algorithm = Algorithm \solver program → Interface
   check
   (generalize solver)
   display
+  (shrink solver)
 
 data IMap c q = IMap (Map (Index c) (Set (Index c))) (Map (Index c) q)
   deriving (Foldable, Functor)
@@ -140,3 +141,12 @@ proofToNFA (Solver' {..}) π = reify πlist \π'@(root:final:_) →
 
 display ∷ (?config ∷ Config) ⇒ Proof c → IO ()
 display (_, φs, _) = Normal.display φs
+
+shrink ∷ (?config ∷ Config, Container c ([Tag], Stmt)) ⇒ Solver' → Proof c → [IO (Proof c)]
+shrink solver (program, φs, _)
+    = map (\φs' → (program, φs',) <$> lower (proofToNFA solver φs'))
+    . map OrdSet.fromDistinctAscList
+    . deletes
+    $ OrdSet.toAscList φs
+  where deletes [] = []
+        deletes (x:xs) = xs : map (x:) (deletes xs)

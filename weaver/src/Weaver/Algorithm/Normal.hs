@@ -16,7 +16,7 @@ import Data.Automata.Graph (lower, optimize, vertices)
 import Data.Finite.Container (Container, Index)
 import Data.Finite.Small.Map (Map)
 import Data.Foldable (for_, foldl')
-import Data.Set ((\\))
+import Data.Set ((\\), fromDistinctAscList, toAscList)
 import Language.SMT.SExpr (prettyPrint)
 import Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), proofToNFA)
 import Weaver.Config (Config, debug)
@@ -31,6 +31,7 @@ algorithm = Algorithm \solver program → Interface
   (check program)
   (generalize solver)
   (display . fst)
+  (shrink solver)
 
 type Proof c = (Assertions, NFA (Map (Index c)))
 
@@ -65,3 +66,8 @@ display ∷ (?config ∷ Config) ⇒ Assertions → IO ()
 display φs = when debug do
   putStrLn "[debug] ~~~ Final Proof ~~~"
   mapM_ (\φ → putStr "        " >> prettyPrint φ) φs
+
+shrink ∷ Container c ([Tag], Stmt) ⇒ Solver' → Proof c → [IO (Proof c)]
+shrink solver (φs, _) = map (initialize solver . fromDistinctAscList) (deletes (toAscList φs))
+  where deletes [] = []
+        deletes (x:xs) = xs : map (x:) (deletes xs)

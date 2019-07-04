@@ -26,6 +26,7 @@ algorithm = Algorithm \solver program → Interface
   check
   (generalize solver)
   (const (return ()))
+  (const [])
 
 type Proof c = DFA (Map (Index c))
 
