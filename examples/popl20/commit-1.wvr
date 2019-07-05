@@ -1,0 +1,75 @@
+(var manager (Int) Int)
+(var manager-front manager-back Int)
+(var client (Int) Int)
+(var client-front client-back Int)
+(var node (Int) Int)
+(var node-front node-back Int)
+(var manager-state client-state node-state Int)
+(var update ok Int)
+(var safe Bool)
+
+(assume (and
+  (= safe true)
+  (= manager-front manager-back)
+  (= client-front client-back)
+  (= node-front node-back)
+  (= manager-state node-state client-state 0)))
+
+(par
+  ; manager
+  (loop
+    (cond
+      (atomic
+        (assume (= manager-state 0))
+        (assume (> manager-back manager-front))
+        (set! safe (= (manager manager-front) update))
+        (set! manager-front (+ manager-front 1))
+        (set! manager-state 1))
+      (atomic
+        (assume (= manager-state 1))
+        (assume (= (node node-back) update))
+        (set! node-back (+ node-back 1))
+        (set! manager-state 2))
+      (atomic
+        (assume (= manager-state 3))
+        (assume (> manager-back manager-front))
+        (set! safe (= (manager manager-front) ok))
+        (set! manager-front (+ manager-front 1))
+        (set! manager-state 4))
+      (atomic
+        (assume (= manager-state 4))
+        (assume (= (client client-back) ok))
+        (set! client-back (+ client-back 1))
+        (set! manager-state 0))))
+
+  ; node
+  (loop
+    (cond
+      (atomic
+        (assume (= node-state 0))
+        (assume (> node-back node-front))
+        (set! safe (= (node node-front) update))
+        (set! node-front (+ node-front 1))
+        (set! node-state 1))
+      (atomic
+        (assume (= node-state 1))
+        (assume (= (manager manager-back) ok))
+        (set! manager-back (+ manager-back 1))
+        (set! node-state 0))))
+
+  ; client
+  (loop
+    (cond
+      (atomic
+        (assume (= client-state 0))
+        (assume (= (manager manager-back) update))
+        (set! manager-back (+ manager-back 1))
+        (set! client-state 1))
+      (atomic
+        (assume (= client-state 1))
+        (assume (> client-back client-front))
+        (set! safe (= (client client-front) ok))
+        (set! client-front (+ client-front 1))
+        (set! client-state 0)))))
+
+(assume (not safe))
