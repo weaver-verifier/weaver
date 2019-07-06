@@ -233,6 +233,11 @@ inferExpr (List ["if", x, y, z]) = do
   This (Pair e₂ t) ← inferExpr y
   e₃               ← compileExpr t z
   return (This (Pair (ite e₁ e₂ e₃) t))
+inferExpr (List ["ite", x, y, z]) = do
+  e₁               ← compileExpr Bool x
+  This (Pair e₂ t) ← inferExpr y
+  e₃               ← compileExpr t z
+  return (This (Pair (ite e₁ e₂ e₃) t))
 inferExpr (List ["store", x, y, z]) = do
   This (Pair ey ty) ← inferExpr y
   This (Pair ez tz) ← inferExpr z

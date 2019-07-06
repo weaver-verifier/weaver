@@ -59,4 +59,5 @@
       (set! t (+ t k))
       (set! g (> k 0)))))
 
-(assume (not (= r 0)))
+(assume (not (and (= r 0))))
+;(assume (not (and (= r 0) (= s (* 2 N)) (= t (- N 1)))))
