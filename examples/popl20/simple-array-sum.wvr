@@ -18,9 +18,8 @@
       (set! p k)))
   (while (< l N)
     (if (< l p)
-      (seq
-        (atomic
-          (set! csum (+ csum (select C l)))
-          (set! l (+ l 1)))))))
+      (atomic
+        (set! csum (+ csum (select C l)))
+        (set! l (+ l 1))))))
 
 (assume (not (= csum (+ asum N))))

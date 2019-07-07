@@ -31,13 +31,13 @@
         (set! node-back (+ node-back 1))
         (set! manager-state 2))
       (atomic
-        (assume (= manager-state 3))
+        (assume (= manager-state 2))
         (assume (> manager-back manager-front))
         (set! safe (= (manager manager-front) ok))
         (set! manager-front (+ manager-front 1))
-        (set! manager-state 4))
+        (set! manager-state 3))
       (atomic
-        (assume (= manager-state 4))
+        (assume (= manager-state 3))
         (assume (= (client client-back) ok))
         (set! client-back (+ client-back 1))
         (set! manager-state 0))))

@@ -1,0 +1,30 @@
+(var s t m c T S u U Int)
+
+(assume (= m 0))
+(assume (< 0 T))
+(assume (< 0 S))
+(assume (< 0 U))
+(assume (= t T))
+(assume (= s S))
+(assume (= u U))
+
+(par
+  (while (or (< 0 s) (< 0 t) (< 0 u))
+    (cond
+      (atomic
+        (assume (< 0 s))
+        (set! s (- s 1))
+        (set! m (+ m 1)))
+      (assume (not (< 0 s)))))
+  (while (or (< 0 t) (< 0 u))
+    (cond
+      (atomic
+        (assume (< 0 t))
+        (set! t (- t 1))
+        (set! s (+ s 1)))
+      (assume (not (< 0 t)))))
+  (while (< 0 u)
+    (set! t (+ t 1))
+    (set! u (- u 1))))
+
+(assume (not (= m (+ S T U))))

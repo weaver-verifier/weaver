@@ -1,0 +1,25 @@
+(var A (Array Int Int))
+(var C (Array Int Int))
+(var B (Array Int Int))
+
+(var asum csum i k  N j bsum Int)
+
+(assume (= i k asum bsum j csum 0))
+(assume (<= 0 N))
+
+(par
+  (while (< i N)
+    (atomic
+      (set! asum (+ asum (select A i)))
+      (set! i (+ i 1))))
+  (while (< j N)
+    (atomic
+      (set! bsum (+ bsum (select B j)))
+      (set! j (+ j 1))))
+  (while (< k N)
+    (atomic
+      (store! C k (+ (select A k) (select B k)))
+      (set! csum (+ csum (select C k)))
+      (set! k (+ k 1)))))
+
+(assume (not (= csum (+ asum bsum))))
