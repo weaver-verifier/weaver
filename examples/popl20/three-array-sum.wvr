@@ -8,24 +8,20 @@
 (assume (<= 0 N))
 
 (par
-  (seq
-    (while (< i N)
+  (while (< i N)
+    (atomic
+      (set! asum (+ asum (select A i)))
+      (set! bsum (+ bsum (select B i)))
+      (set! i (+ i 1))))
+  (while (< k N)
+    (atomic
+      (store! C k (+ (select A k) (select B k)))
+      (set! k (+ k 1))
+      (set! p k)))
+  (while (< l N)
+    (if (< l p)
       (atomic
-        (set! asum (+ asum (select A i)))
-        (set! bsum (+ bsum (select B i)))
-        (set! i (+ i 1)))))
-  (seq
-    (while (< k N)
-      (atomic
-        (store! C k (+ (select A k) (select B k)))
-        (set! k (+ k 1))
-        (set! p k))))
-  (seq
-    (while (< l N)
-      (if (< l p)
-        (seq
-          (atomic
-            (set! csum (+ csum (select C l)))
-            (set! l (+ l 1)) ))))))
+        (set! csum (+ csum (select C l)))
+        (set! l (+ l 1))))))
 
-(assume (not (= csum (+ asum bsum)) ))
+(assume (not (= csum (+ asum bsum))))
