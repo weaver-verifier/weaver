@@ -1,0 +1,34 @@
+; -m partition-progress-context
+(var queue (Int) Int)
+(var front back x Int)
+(use
+false
+true
+(<= back front)
+(<= front back)
+(<= (+ front (* (- 1) back)) (- 1))
+(<= (- 1) (+ front (* (- 1) back)))
+(= front back)
+(= x 5)
+(= (queue front) 5)
+)
+
+;(use
+;  (and (= x 5)               (=  size 0))
+;  (and (= x 5 (queue front)) (=  size 1))
+;  (and (= x 5 (queue front)) (>= size 2)))
+
+(assume (and (= front back) (= x 5)))
+
+(par
+  (loop
+    (atomic
+      (assume (= (queue back) 5))
+      (set! back (+ back 1))))
+  (loop
+    (atomic
+      (assume (> back front))
+      (set! x     (queue front))
+      (set! front (+ front 1)))))
+
+(assume (not (= x 5)))

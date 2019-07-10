@@ -1,0 +1,56 @@
+; -m total-progress-context-opt -b rr
+(var queue (Int) Int)
+(var front back Int)
+(var element sum Int)
+(var flag Bool)
+(use
+flag
+false
+true
+(<= back front)
+(<= front back)
+(<= (+ front (* (- 1) back)) (- 1))
+(<= (- 1) (+ front (* (- 1) back)))
+(= front back)
+(and (<= sum 1) (<= 1 sum))
+(and (<= 0 sum) (<= sum 0))
+(and (<= (+ sum element) 0) (<= 0 (+ sum element)))
+(and (<= (+ sum element) 1) (<= 1 (+ sum element)))
+(and (<= (+ sum (queue front)) 0) (<= 0 (+ sum (queue front))))
+(and (<= (+ sum (queue front)) 1) (<= 1 (+ sum (queue front))))
+(and (<= (- 1) (+ front (* (- 1) back))) (not (and (not (<= back front)) (and (not (and (<= (+ sum (queue front)) 0) (<= 0 (+ sum (queue front))))) (not (<= (+ front (* (- 1) back)) (- 2)))))))
+(and (= front back) (<= back front))
+(and (and (<= (+ sum (queue front)) 1) (<= 1 (+ sum (queue front)))) (<= (- 1) (+ front (* (- 1) back))))
+(and (<= back front) (and (and (= front back) (<= sum 0)) (and (= front back) (<= 0 sum))))
+(and (and (= front back) (<= sum 0)) (and (= front back) (<= 0 sum)))
+(and (<= back front) (not (and (not (<= 1 (+ front (* (- 1) back)))) (and (not (<= (+ front (* (- 1) back)) (- 1))) (not (and (and (<= sum 1) (= front back)) (and (<= 1 sum) (= front back))))))))
+(and (<= back front) (not (and (not (<= 1 (+ front (* (- 1) back)))) (and (not (and (and (<= (+ sum element) 1) (= front back)) (and (<= 1 (+ sum element)) (= front back)))) (not (<= (+ front (* (- 1) back)) (- 1)))))))
+(and (and (<= sum 1) (= front back)) (and (<= 1 sum) (= front back)))
+(and (and (<= (+ sum element) 1) (= front back)) (and (<= 1 (+ sum element)) (= front back)))
+(and (and (<= sum 0) (= front back)) (and (<= 0 sum) (= front back)))
+(and (and (<= (+ sum element) 0) (= front back)) (and (<= 0 (+ sum element)) (= front back)))
+(not flag)
+)
+
+(assume (= front back))
+(assume (= sum 0))
+(assume flag)
+
+(par
+  (loop
+    (atomic
+      (assume (> back front))
+      (set! element (queue front))
+      (set! front (+ front 1)))
+    (set! sum (+ sum element)))
+  (loop
+    (if flag
+      (atomic
+        (assume (= (queue back) 1))
+        (set! back (+ back 1)))
+      (atomic
+        (assume (= (queue back) (- 1)))
+        (set! back (+ back 1))))
+    (set! flag (not flag))))
+
+(assume (not (and (<= 0 sum) (<= sum 1))))

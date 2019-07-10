@@ -1,0 +1,49 @@
+; -m total-progress-context-opt --semi -b 1
+(var f f-inv (Int) Int)
+(var i1 i2 N1 N2 counter Int)
+(use
+false
+true
+(<= N2 i2)
+(<= i1 i2)
+(<= i1 0)
+(<= i2 i1)
+(<= 0 i1)
+(<= 0 (+ i1 (+ (* (- 1) i2) (+ (* (- 1) N1) N2))))
+(<= 1 (+ N1 (* (- 1) i1)))
+(<= 1 (+ N2 (* (- 1) i2)))
+(<= (+ N1 (+ (* (- 1) N2) (+ i2 (* (- 1) i1)))) 0)
+(<= (+ i1 (* (- 1) N1)) (- 2))
+(<= (+ i1 (+ (* (- 1) N1) (+ N2 (* (- 1) i2)))) (- 1))
+(<= (+ i1 (+ (* (- 1) i2) (+ (* (- 1) N1) N2))) 0)
+(<= (+ i2 (* (- 1) N2)) (- 1))
+(<= (+ i2 (* (- 1) N2)) (- 2))
+(<= (+ i2 (+ N1 (+ (* (- 1) N2) (* (- 1) i1)))) (- 1))
+(<= (- 1) (+ i1 (+ (* (- 1) N1) (+ N2 (* (- 1) i2)))))
+(<= (- 1) (+ i2 (* (- 1) N2)))
+(<= (- 1) (+ i2 (+ N1 (+ (* (- 1) N2) (* (- 1) i1)))))
+(= counter 0)
+(= counter (f-inv (f counter)))
+(= (f counter) 0)
+(= (f-inv counter) 0)
+(and (= counter (f (f-inv counter))) (= (f-inv counter) (f-inv (f (f-inv counter)))))
+)
+
+(assume (= i1 0))
+(assume (= counter 0))
+(assume (= i2 0))
+(assume (= N1 N2))
+
+(par
+  (while (< i1 N1)
+    (atomic
+      (assume (= (f-inv (f counter)) counter))
+      (set! counter (f counter))
+      (set! i1 (+ i1 1))))
+  (while (< i2 N2)
+    (atomic
+      (assume (= (f (f-inv counter)) counter))
+      (set! counter (f-inv counter))
+      (set! i2 (+ i2 1)))))
+
+(assume (not (= counter 0)))

@@ -1,0 +1,63 @@
+; -m total-progress-context-opt --semi -b 1
+(var i1 i2 N1 N2 counter Int)
+(var j1 j2 M1 M2 Int)
+(use
+false
+true
+(<= M1 j1)
+(<= N2 i2)
+(<= counter 0)
+(<= counter 1)
+(<= counter 2)
+(<= i1 i2)
+(<= i2 i1)
+(<= i2 j1)
+(<= j1 i2)
+(<= j2 j1)
+(<= 0 counter)
+(<= 0 (+ i1 (+ (* (- 1) i2) (+ (* (- 1) N1) N2))))
+(<= 0 (+ i2 (+ (* (- 1) j1) (+ (* (- 1) N2) M1))))
+(<= 0 (+ j1 (+ (* (- 1) j2) (+ (* (- 1) M1) M2))))
+(<= 1 counter)
+(<= 1 (+ M2 (* (- 1) j2)))
+(<= 1 (+ N2 (* (- 1) i2)))
+(<= 2 counter)
+(<= (+ i1 (+ (* (- 1) i2) (+ (* (- 1) N1) N2))) 0)
+(<= (+ i2 (* (- 1) N2)) (- 1))
+(<= (+ i2 (* (- 1) N2)) (- 2))
+(<= (+ i2 (+ N1 (+ (* (- 1) N2) (* (- 1) i1)))) (- 1))
+(<= (+ i2 (+ (* (- 1) j1) (+ (* (- 1) N2) M1))) 0)
+(<= (+ j1 (* (- 1) M1)) (- 1))
+(<= (+ j2 (* (- 1) M2)) (- 1))
+(<= (+ j2 (* (- 1) M2)) (- 2))
+(<= (+ j2 (+ M1 (+ (* (- 1) M2) (* (- 1) j1)))) (- 1))
+(= counter 0)
+(and (<= counter 0) (<= 0 counter))
+)
+
+(assume (= i1 i2 j1 j2 0))
+(assume (= counter 0))
+(assume (= N1 N2 M1 M2))
+
+(par
+  (while (< i1 N1)
+    (atomic
+      (set! counter (+ counter 1))
+      (set! i1 (+ i1 1))))
+  (while (< i2 N2)
+    (atomic
+      (assume (< 0 counter))
+      (set! counter (- counter 1))
+      (set! i2 (+ i2 1))))
+  (while (< j1 M1)
+    (atomic
+      (set! counter (+ counter 1))
+      (set! j1 (+ j1 1))))
+  (while (< j2 M2)
+    (atomic
+      (assume (< 0 counter))
+      (set! counter (- counter 1))
+      (set! j2 (+ j2 1)))))
+
+(assume (not (= counter 0)))
+
