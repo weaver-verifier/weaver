@@ -1,0 +1,31 @@
+(var count Int)
+(var sFlag Bool)
+(var sEvent Bool)
+(var stopped Bool)
+(var pos Int)
+(var assert Bool)
+
+(assume (= pos 0))
+(assume (= count 1))
+(assume (= sFlag false))
+(assume (= sEvent false))
+(assume (= stopped false))
+(assume (= assert true))
+
+(par
+  (seq
+    (atomic
+      (set! count (if sFlag count (+ count 1)))
+      (set! assert (or sFlag (not stopped))))
+    (set! count (- count 1))
+    (if (= count 0)
+      (set! sEvent true)))
+  (seq
+    (set! sFlag true)
+    (set! count (- count 1))
+    (if (= count 0)
+      (set! sEvent true))
+    (assume sEvent)
+    (set! stopped true)))
+
+(assume (not assert))
