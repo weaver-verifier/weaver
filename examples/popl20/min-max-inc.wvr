@@ -2,18 +2,6 @@
 (var min max i j k l N Int)
 (var assert b1 b2 Bool)
 
-(use
-        assert
-        (<= min (select A 0))
-        (<= 0 (+ k (- 1)))
-        (<= (+ min (- 1)) max)
-        (= 0 k)
-        (and (<= 0 (+ k (- 1))) (<= (+ (select (store A k (+ (select A k) 1)) 0) (- 1)) max))
-        (and (= 0 k) (or (<= (select A k) max) (not (= (select A k) (select A 0)))))
-        (not b1)
-        (not b2)
-)
-
 (assume (and
   (= i j k l 0)
   (= assert b1 b2 false)))
@@ -30,11 +18,11 @@
     (set! max (select A 0))
     (set! b2 true)
     (while (< j N)
-      (atomic 
+      (atomic
         (set! max (if (> max (select A j)) max (select A j)))
         (set! j (+ j 1)))))
   (while  (< k N)
-    (atomic 
+    (atomic
       (store! A k (+ (select A k) 1))
       (set! k (+ k 1))))
 ;  (while  (< l N)
