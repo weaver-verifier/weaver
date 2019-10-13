@@ -12,7 +12,7 @@ module Data.Automata.Regex (
 ) where
 
 import Prelude hiding (concat, lookup, null, repeat)
-import Data.Align (Align (..))
+import Data.Align (Align (..), Semialign (..))
 import Data.Automata.Classes (PointedWithKey (..))
 import Data.Automata.DFA (DFA, Edge (..))
 import Data.Automata.NFA (NFA, empty, null, symbol, union, concat, shuffle, repeat)

@@ -35,17 +35,16 @@ emap ∷ (∀ b. v b → v b) → Expr v a → Expr v a
 emap f = runIdentity . etraverse (Identity . f)
 
 ebind ∷ Var v ⇒ (∀ b. v '( '[], b) → Expr v b) → Expr v a → Expr v a
-ebind f (Expr e) = Expr do
-  This x ← e
+ebind f (Expr e) = Expr (e >>= \(Some x) →
   case rank x of
     Rank SNil        _ → getExpr (f x)
-    Rank (SCons _ _) _ → Variable (This x)
+    Rank (SCons _ _) _ → Variable (Some x))
 
 etraverse_ ∷ Applicative f ⇒ (∀ b. v b → f c) → Expr v a → f ()
-etraverse_ f (Expr e) = traverse_ (\(This x) → f x) e
+etraverse_ f (Expr e) = traverse_ (\(Some x) → f x) e
 
 etraverse ∷ Applicative f ⇒ (∀ b. v b → f (v b)) → Expr v a → f (Expr v a)
-etraverse f (Expr e) = Expr <$> traverse (\(This x) → fmap This (f x)) e
+etraverse f (Expr e) = Expr <$> traverse (\(Some x) → fmap Some (f x)) e
 
 type family Args v p where
   Args v '[]     = ()
@@ -54,8 +53,8 @@ type family Args v p where
 var ∷ Var v ⇒ v '(p, a) → Args v p → Expr v a
 var v =
   case rank v of
-    Rank SNil _ → \_ → Expr (Variable (This v))
-    Rank xs   _ → \p → Expr (List (Variable (This v) : go xs p))
+    Rank SNil _ → \_ → Expr (Variable (Some v))
+    Rank xs   _ → \p → Expr (List (Variable (Some v) : go xs p))
   where go ∷ Sorts p → Args v p → [SExpr (Some v)]
         go SNil        ()           = []
         go (SCons _ p) (Expr x, xs) = x : go p xs

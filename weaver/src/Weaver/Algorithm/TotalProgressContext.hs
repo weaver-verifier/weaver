@@ -14,9 +14,9 @@
 
 module Weaver.Algorithm.TotalProgressContext where
 
-import           Prelude hiding (lookup)
+import           Prelude hiding (lookup, zipWith)
 import           Control.Monad (filterM, when)
-import           Data.Align (Align (..))
+import           Data.Align (Align (..), Semialign (..))
 import           Data.Automata.DFA (DFA, Edge (..), approximate, difference)
 import           Data.Automata.Classes (Absorb (..))
 import           Data.Automata.NFA (NFA, NFAM, toDFA)
@@ -62,11 +62,16 @@ instance Absorb (IMap c) where
     (Map.unionWith Set.union a b)
     (absorbWith f x y)
 
-instance Align (IMap c) where
-  nil = IMap nil nil
+instance Semialign (IMap c) where
   alignWith f (IMap a x) (IMap b y) = IMap
     (Map.unionWith Set.union a b)
     (alignWith f x y)
+  zipWith f (IMap a x) (IMap b y) = IMap
+    (Map.unionWith Set.union a b)
+    (zipWith f x y)
+
+instance Align (IMap c) where
+  nil = IMap nil nil
 
 type Proof c = (DFA (IMap c), Assertions, NFA (IMap c))
 

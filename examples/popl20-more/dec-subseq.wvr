@@ -1,0 +1,27 @@
+(var A queue (Int) Int)
+(var i N last start end new old Int)
+(var ok Bool)
+
+(assume (= start end))
+(assume (= old last (A 0)))
+(assume (= i 0))
+(assume ok)
+
+(par
+  (while (< i N)
+    (if (<= (A i) last)
+      (seq
+        (atomic
+          (assume (= (queue end) (A i)))
+          (set! end (+ end 1)))
+        (set! last (A i))))
+    (set! i (+ i 1)))
+  (while (or (< i N) (< start end))
+    (atomic
+      (assume (< start end))
+      (set! new (queue start))
+      (set! start (+ start 1)))
+    (set! ok (and ok (>= old new)))
+    (set! old new)))
+
+(assume (not ok))

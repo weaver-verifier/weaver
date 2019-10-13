@@ -11,7 +11,6 @@ module Language.SMT.Backend.SMTInterpol where
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.List.NonEmpty (toList)
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Semigroup ((<>))
 import Data.Text (pack)
 import Data.Traversable (for)
 import Numeric.Natural (Natural)

@@ -64,7 +64,7 @@ interpolate solver@Solver {..} exprs = liftIO do
   return (fmap (Expr . reparse) <$> result)
 
 reference ∷ Var v ⇒ Solver v → Some v → IO (SExpr Void)
-reference Solver {..} var'@(This var) = do
+reference Solver {..} var'@(Some var) = do
   declared₀ ← readIORef declared
   case lookup var' declared₀ of
     Just name → return (Symbol name)

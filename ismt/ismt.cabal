@@ -26,14 +26,14 @@ library
                        Language.SMT.Solver,
                        Language.SMT.Var
   other-modules:       Language.SMT.Expr.Internal
-  build-depends:       attoparsec    ^>=0.13.2.2,
-                       base          ^>=4.12.0.0,
-                       bimap         ^>=0.3.3,
-                       dependent-sum ^>=0.4,
-                       containers    ^>=0.6.0.1,
-                       process       ^>=1.6.3.0,
+  build-depends:       attoparsec    ^>=0.13.2.3,
+                       base          ^>=4.13.0.0,
+                       bimap         ^>=0.4.0,
+                       dependent-sum ^>=0.6.2.0,
+                       containers    ^>=0.6.2.1,
+                       process       ^>=1.6.5.1,
                        scientific    ^>=0.3.6.2,
-                       text          ^>=1.2.3.1
+                       text          ^>=1.2.4.0
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall

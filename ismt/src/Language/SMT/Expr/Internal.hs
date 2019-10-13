@@ -15,4 +15,4 @@ newtype Expr (v ∷ ([*], *) → *) a = Expr { getExpr ∷ SExpr (Some v) }
   deriving (Eq, Ord, Show)
 
 instance (∀ b. SExpressible (v b)) ⇒ SExpressible (Expr v a) where
-  toSExpr (Expr e) = e >>= \(This x) → toSExpr x
+  toSExpr (Expr e) = e >>= \(Some x) → toSExpr x

@@ -5,6 +5,7 @@
     GADTs,
     ImplicitParams,
     MultiParamTypeClasses,
+    TypeFamilies,
     OverloadedLists,
     OverloadedStrings,
     UnicodeSyntax,
@@ -18,7 +19,10 @@ import Prelude hiding (and, not, null, map)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.State (State, evalState, get, put)
 import Data.Bifunctor (bimap)
-import Data.Dependent.Sum (DSum (..), EqTag (..), OrdTag (..))
+import Data.Constraint (Dict (..))
+import Data.Constraint.Compose (ComposeC)
+import Data.Constraint.Extras (ArgDict (..))
+import Data.Dependent.Sum (DSum (..))
 import Data.Dependent.Map (DMap, empty, findWithDefault, foldrWithKey, insert, intersectionWithKey, null, map, mapWithKey, singleton, union, toList)
 import Data.Functor.Const (Const (..))
 import Data.GADT.Compare (GEq (..), GCompare (..), GOrdering (..), gcompare, geq)
@@ -63,11 +67,19 @@ instance Var V where
 
 newtype U a = U { toV ∷ V '( '[], a) }
 
-instance EqTag U (Expr V) where
-  eqTagged (U _) (U _) = (==)
+instance ArgDict (ComposeC Eq (Expr V)) U where
+  type ConstraintsFor U (ComposeC Eq (Expr V)) = ()
+  argDict (U _) = Dict
 
-instance OrdTag U (Expr V) where
-  compareTagged (U _) (U _) = compare
+instance ArgDict (ComposeC Ord (Expr V)) U where
+  type ConstraintsFor U (ComposeC Ord (Expr V)) = ()
+  argDict (U _) = Dict
+
+-- instance EqTag U (Expr V) where
+--   eqTagged (U _) (U _) = (==)
+
+-- instance OrdTag U (Expr V) where
+--   compareTagged (U _) (U _) = compare
 
 instance GEq U where
   geq (U x₁) (U x₂) = do

@@ -17,7 +17,7 @@ module Data.Automata.DFA (
 
 import Prelude hiding (lookup, null)
 import Control.Applicative ((<|>))
-import Data.Align (Align (..))
+import Data.Align (Align (..), Semialign (..))
 import Data.Automata.Classes (PointedWithKey (..), Absorb (..))
 import Data.Automata.Graph (GraphM (..), Graph, foldCut)
 import Data.Functor.Apply (Apply (..), liftF2)

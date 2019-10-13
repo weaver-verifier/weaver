@@ -79,7 +79,7 @@ tag (Rep x) = Rep (tag x)
 
 data Program = ∀c. Container c ([Tag], Stmt) ⇒ Program [Expr V Bool] (Regex (Index c))
 
-compile ∷ (MonadIO m, MonadError Text m) ⇒ [SExpr Void] → m Program
+compile ∷ (MonadIO m, MonadError Text m, MonadFail m) ⇒ [SExpr Void] → m Program
 compile ss = do
   ((ss', env), stmts) ← runWriterT (runStateT (compileEnv ss) empty)
   body ← runReaderT (compileBody ss') env
@@ -87,7 +87,7 @@ compile ss = do
 
 type Env = Map Text (Some V)
 
-compileEnv ∷ (MonadIO m, MonadError Text m, MonadState Env m, MonadWriter [Expr V Bool] m) ⇒ [SExpr Void] → m [SExpr Void]
+compileEnv ∷ (MonadIO m, MonadError Text m, MonadState Env m, MonadWriter [Expr V Bool] m, MonadFail m) ⇒ [SExpr Void] → m [SExpr Void]
 compileEnv [] = return []
 compileEnv ss'@(s:ss) = do
   ok ← compileDecl s
@@ -111,28 +111,28 @@ pattern Symbols ∷ [Text] → [SExpr a]
 pattern Symbols xs ← (traverse toSymbol → Just xs)
 
 toSort ∷ Eq a ⇒ SExpr a → Maybe (Some Sort)
-toSort "Int" = Just (This Integer)
-toSort "Bool" = Just (This Bool)
+toSort "Int" = Just (Some Integer)
+toSort "Bool" = Just (Some Bool)
 toSort (List ["Array", a, b]) = do
-  This a' ← toSort a
-  This b' ← toSort b
-  return (This (Array a' b'))
+  Some a' ← toSort a
+  Some b' ← toSort b
+  return (Some (Array a' b'))
 toSort _ = Nothing
 
 toSorts ∷ Eq a ⇒ [SExpr a] → Maybe (Some Sorts)
-toSorts [] = Just (This SNil)
+toSorts [] = Just (Some SNil)
 toSorts (x:xs) = do
-  This x'  ← toSort x
-  This xs' ← toSorts xs
-  return (This (SCons x' xs'))
+  Some x'  ← toSort x
+  Some xs' ← toSorts xs
+  return (Some (SCons x' xs'))
 
 pattern Sort ∷ Eq b ⇒ Sort a → SExpr b
-pattern Sort a ← (toSort → Just (This a))
+pattern Sort a ← (toSort → Just (Some a))
 
 pattern Sorts ∷ Eq b ⇒ Sorts a → [SExpr b]
-pattern Sorts a ← (toSorts → Just (This a))
+pattern Sorts a ← (toSorts → Just (Some a))
 
-compileDecl ∷ (MonadIO m, MonadError Text m, MonadState Env m, MonadWriter [Expr V Bool] m) ⇒ SExpr Void → m Bool
+compileDecl ∷ (MonadIO m, MonadError Text m, MonadState Env m, MonadWriter [Expr V Bool] m, MonadFail m) ⇒ SExpr Void → m Bool
 compileDecl (List ("var" : Symbols xs :> Sort a)) = do
   mapM_ (addDecl (Rank SNil a)) xs
   return True
@@ -151,12 +151,12 @@ addDecl s x = do
   env ← get
   when (member x env) do
     report ["Variable `", x, "' is declared multiple times"]
-  put (insert x (This (mkV x s)) env)
+  put (insert x (Some (mkV x s)) env)
 
-compileBody ∷ (MonadReader Env m, MonadError Text m) ⇒ [SExpr Void] → m (Regex Stmt)
+compileBody ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ [SExpr Void] → m (Regex Stmt)
 compileBody = fmap (foldr Cat Nil) . traverse compileStmts
 
-compileStmts ∷ (MonadReader Env m, MonadError Text m) ⇒ SExpr Void → m (Regex Stmt)
+compileStmts ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ SExpr Void → m (Regex Stmt)
 compileStmts (List ("cond":ss)) = foldr Alt Emp <$> traverse compileStmts ss
 compileStmts (List ("seq":ss))  = foldr Cat Nil <$> traverse compileStmts ss
 compileStmts (List ("par":ss))  = foldr Par Nil <$> traverse compileStmts ss
@@ -180,10 +180,10 @@ compileStmts (List ["if", e, s]) = compileStmts
   ]
 compileStmts s = Sym <$> compileStmt s
 
-compileStmt ∷ (MonadReader Env m, MonadError Text m) ⇒ SExpr Void → m Stmt
+compileStmt ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ SExpr Void → m Stmt
 compileStmt (List ["assume", e]) = assume <$> compileExpr Bool e
 compileStmt (List ["set!", Symbol x, e]) = do
-  This x' ← lookupVar x
+  Some x' ← lookupVar x
   case rank x' of
     Rank (SCons _ _) _ → report ["Cannot set! function `", x, "'"]
     Rank SNil        t → do
@@ -193,23 +193,23 @@ compileStmt (List ("atomic" : ss)) = atomic <$> traverse compileStmt ss
 compileStmt (List ["store!", e₁, e₂, e₃]) = compileStmt ["set!", e₁, ["store", e₁, e₂, e₃]]
 compileStmt s = report ["Unrecognized statement `", pretty s, "'"]
 
-compileExpr ∷ (MonadReader Env m, MonadError Text m) ⇒ Sort a → SExpr Void → m (Expr V a)
+compileExpr ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ Sort a → SExpr Void → m (Expr V a)
 compileExpr t e = do
-  This (Pair e' t') ← inferExpr e
+  Some (Pair e' t') ← inferExpr e
   case geq t t' of
     Just Refl → return e'
     Nothing   → report ["Expected type `", pretty (toSExpr t), "' but got `", pretty (toSExpr t'), "' for the expression `", pretty e, "'"]
 
-compileExprs ∷ (MonadReader Env m, MonadError Text m) ⇒ Sorts a → [SExpr Void] → m (Args V a)
+compileExprs ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ Sorts a → [SExpr Void] → m (Args V a)
 compileExprs SNil [] = return ()
 compileExprs SNil _ = report ["Function has too many arguments"]
 compileExprs (SCons a p) (x:xs) = (,) <$> compileExpr a x <*> compileExprs p xs
 compileExprs (SCons _ _) [] = report ["Function does not have enough arguments"]
 
-inferExpr ∷ (MonadReader Env m, MonadError Text m) ⇒ SExpr Void → m (Some (Product (Expr V) Sort))
-inferExpr (Numeral n)         = return (This (Pair (nat n) Integer))
-inferExpr (Symbol "true")     = return (This (Pair true Bool))
-inferExpr (Symbol "false")    = return (This (Pair false Bool))
+inferExpr ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ SExpr Void → m (Some (Product (Expr V) Sort))
+inferExpr (Numeral n)         = return (Some (Pair (nat n) Integer))
+inferExpr (Symbol "true")     = return (Some (Pair true Bool))
+inferExpr (Symbol "false")    = return (Some (Pair false Bool))
 inferExpr (List ["not", x])   = unaryOp Bool Bool not x
 inferExpr (List ("and" : xs)) = variadicOp Bool Bool and xs
 inferExpr (List ("or"  : xs)) = variadicOp Bool Bool or xs
@@ -223,74 +223,74 @@ inferExpr (List [">",  x, y]) = binaryOp Integer Bool gt x y
 inferExpr (List ["<=", x, y]) = binaryOp Integer Bool le x y
 inferExpr (List [">=", x, y]) = binaryOp Integer Bool ge x y
 inferExpr (List ("=" : x : xs)) = do
-  This (Pair e t) ← inferExpr x
+  Some (Pair e t) ← inferExpr x
   variadicOp t Bool (eq . (e:)) xs
 inferExpr (List ("/=" : x : xs)) = do
-  This (Pair e t) ← inferExpr x
+  Some (Pair e t) ← inferExpr x
   variadicOp t Bool (ne . (e:)) xs
 inferExpr (List ["if", x, y, z]) = do
   e₁               ← compileExpr Bool x
-  This (Pair e₂ t) ← inferExpr y
+  Some (Pair e₂ t) ← inferExpr y
   e₃               ← compileExpr t z
-  return (This (Pair (ite e₁ e₂ e₃) t))
+  return (Some (Pair (ite e₁ e₂ e₃) t))
 inferExpr (List ["ite", x, y, z]) = do
   e₁               ← compileExpr Bool x
-  This (Pair e₂ t) ← inferExpr y
+  Some (Pair e₂ t) ← inferExpr y
   e₃               ← compileExpr t z
-  return (This (Pair (ite e₁ e₂ e₃) t))
+  return (Some (Pair (ite e₁ e₂ e₃) t))
 inferExpr (List ["store", x, y, z]) = do
-  This (Pair ey ty) ← inferExpr y
-  This (Pair ez tz) ← inferExpr z
+  Some (Pair ey ty) ← inferExpr y
+  Some (Pair ez tz) ← inferExpr z
   ex ← compileExpr (Array ty tz) x
-  return (This (Pair (store ex ey ez) (Array ty tz)))
+  return (Some (Pair (store ex ey ez) (Array ty tz)))
 inferExpr (List ["select", x, y]) = do
-  This (Pair ex tx) ← inferExpr x
+  Some (Pair ex tx) ← inferExpr x
   case tx of
     Array a b → do
       ey ← compileExpr a y
-      return (This (Pair (select ex ey) b))
+      return (Some (Pair (select ex ey) b))
     _         → report ["Expected array type but got `", pretty (toSExpr tx), "' for the expression `", pretty x, "'"]
 inferExpr (List (Symbol x : xs)) = do
-  This x' ← lookupVar x
+  Some x' ← lookupVar x
   case rank x' of
     Rank p r → do
       xs' ← compileExprs p xs
-      return (This (Pair (var x' xs') r))
+      return (Some (Pair (var x' xs') r))
 inferExpr (Symbol x) = do
-  This x' ← lookupVar x
+  Some x' ← lookupVar x
   case rank x' of
-    Rank SNil t → return (This (Pair (var x' ()) t))
+    Rank SNil t → return (Some (Pair (var x' ()) t))
     _           → report ["Function `", x, "' is missing arguments"]
 inferExpr e = report ["Unknown expression `", pretty e, "'"]
 
-lookupVar ∷ (MonadReader Env m, MonadError Text m) ⇒ Text → m (Some V)
+lookupVar ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ Text → m (Some V)
 lookupVar x = do
   env ← ask
   case lookup x env of
     Just x' → return x'
     Nothing → report ["Variable `", x, "' not in scope"]
 
-variadicOp ∷ (MonadReader Env m, MonadError Text m)
+variadicOp ∷ (MonadReader Env m, MonadError Text m, MonadFail m)
            ⇒ Sort a → Sort b → ([Expr V a] → Expr V b)
            → [SExpr Void] → m (Some (Product (Expr V) Sort))
 variadicOp t₁ t₂ f xs = do
   xs' ← traverse (compileExpr t₁) xs
-  return (This (Pair (f xs') t₂))
+  return (Some (Pair (f xs') t₂))
 
-binaryOp ∷ (MonadReader Env m, MonadError Text m)
+binaryOp ∷ (MonadReader Env m, MonadError Text m, MonadFail m)
          ⇒ Sort a → Sort b → (Expr V a → Expr V a → Expr V b)
          → SExpr Void → SExpr Void → m (Some (Product (Expr V) Sort))
 binaryOp t₁ t₂ f x y = do
   x' ← compileExpr t₁ x
   y' ← compileExpr t₁ y
-  return (This (Pair (f x' y') t₂))
+  return (Some (Pair (f x' y') t₂))
 
-unaryOp ∷ (MonadReader Env m, MonadError Text m)
+unaryOp ∷ (MonadReader Env m, MonadError Text m, MonadFail m)
         ⇒ Sort a → Sort b → (Expr V a → Expr V b)
         → SExpr Void → m (Some (Product (Expr V) Sort))
 unaryOp t₁ t₂ f x = do
   x' ← compileExpr t₁ x
-  return (This (Pair (f x') t₂))
+  return (Some (Pair (f x') t₂))
 
 report ∷ MonadError Text m ⇒ [Text] → m a
 report = throwError . concat
