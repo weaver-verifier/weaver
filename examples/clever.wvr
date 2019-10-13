@@ -1,0 +1,18 @@
+(var n m Int)
+(var i1 i2 j1 k1 k2 Int)
+
+(assume (= i1 i2 k1 k2 0))
+(assume (>= m 0))
+
+(par
+    (while (< i1 n)
+        (set! j1 0)
+        (while (< j1 m)
+            (set! k1 (+ k1 1))
+            (set! j1 (+ j1 1)))
+        (set! i1 (+ i1 1)))
+    (while (< i2 n)
+        (set! k2 (+ k2 m))
+        (set! i2 (+ i2 1))))
+
+(assume (not (= k1 k2)))

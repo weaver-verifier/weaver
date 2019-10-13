@@ -1,0 +1,37 @@
+(var i j total C N M Int)
+(var q1 q2 (Int) Int)
+(var q1-front q1-back q2-front q2-back Int)
+
+(assume (and
+    (> N M)
+    (>= M 0)
+    (> C 0)
+    (= q1-front q1-back)
+    (= q2-front q2-back)
+    (= total 0)
+    (= i 0)
+    (= j 0)))
+
+(par
+    (while (< i N)
+        (atomic
+            (assume (= (q1 q1-back) C))
+            (set! q1-back (+ q1-back 1)))
+        (set! i (+ i 1)))
+    (while (< j M)
+        (atomic
+            (assume (= (q2 q2-back) (- C)))
+            (set! q2-back (+ q2-back 1)))
+        (set! j (+ j 1)))
+    (while (or (< i N) (< q1-front q1-back))
+        (atomic
+            (assume (< q1-front q1-back))
+            (set! total (+ total (q1 q1-front)))
+            (set! q1-front (+ q1-front 1))))
+    (while (or (< j M) (< q2-front q2-back))
+        (atomic
+            (assume (< q2-front q2-back))
+            (set! total (+ total (q2 q2-front)))
+            (set! q2-front (+ q2-front 1)))))
+
+(assume (not (> total 0)))

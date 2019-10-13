@@ -1,0 +1,32 @@
+(var A B Int)
+(var i1 i2 x1 x2 Int)
+(var queue (Int) Int)
+(var start end Int)
+(var ok Bool)
+
+(assume (= start end))
+
+(par
+    (seq
+        (set! x1 0)
+        (set! i1 0)
+        (while (< i1 A)
+            (set! x1 (+ x1 B))
+            (set! i1 (+ i1 1)))
+        (atomic
+            (assume (= (queue end) x1))
+            (set! end (+ end 1))))
+    (seq
+        (set! x2 0)
+        (set! i2 0)
+        (while (< i2 A)
+            (set! x2 (+ x2 B))
+            (set! i2 (+ i2 1)))
+        (atomic
+            (assume (= (queue end) x2))
+            (set! end (+ end 1))))
+    (seq
+        (assume (= end (+ start 2)))
+        (set! ok (= (queue start) (queue (+ start 1))))))
+
+(assume (not ok))
