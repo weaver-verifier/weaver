@@ -1,5 +1,3 @@
-;passes in 59.18s  with option -m-total-progress-opt--b-rr--s-yices-smtinterpol
-;passes in 724.5s  with option -m-partition-progress--b-rr--s-yices-smtinterpol
 (var max1 max2 i j k N M Int)
 (var A (Array Int Int))
 
@@ -11,15 +9,15 @@
 
 (par
     (while (< i N)
-        (atomic 
+        (atomic
         (set! max1 (if (< max1 (select A i)) (select A i) max1))
         (set! i (+ i 1))))
     (while (< j M)
-        (atomic 
+        (atomic
         (set! max2 (if (< max2 (select A j)) (select A j) max2))
         (set! j (+ j 1))))
     (while (< k N)
-        (atomic 
+        (atomic
         (set! max2 (if (< max2 (select A k)) (select A k) max2))
         (set! k (+ k 1)))))
 

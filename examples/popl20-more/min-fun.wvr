@@ -1,0 +1,24 @@
+(var min1 min2 min3 i j k N M Int)
+(var A (Int) Int)
+
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j min1 min2 min3 0))
+(assume (= k M))
+
+(par
+    (while (< i N)
+        (atomic
+        (set! min1 (if (> min1 (A i)) (A i) min1))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (set! min2 (if (> min2 (A j)) (A j) min2))
+        (set! j (+ j 1))))
+    (while (< k N)
+        (atomic
+        (set! min3 (if (> min3 (A k)) (A k) min3))
+        (set! k (+ k 1)))))
+
+(assume (not (= min1 (if (> min2 min3) min3 min2))))
