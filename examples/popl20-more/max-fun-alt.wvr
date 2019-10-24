@@ -21,4 +21,4 @@
         (set! max2 (if (< max2 (A k)) (A k) max2))
         (set! k (+ k 1)))))
 
-(assume (not (= max1 max2) ))
+(assume (not (= max1 max2)))

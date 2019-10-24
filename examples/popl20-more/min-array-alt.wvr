@@ -21,4 +21,4 @@
         (set! min2 (if (> min2 (select A k)) (select A k) min2))
         (set! k (+ k 1)))))
 
-(assume (not (= min1 min2) ))
+(assume (not (= min1 min2)))
