@@ -1,0 +1,21 @@
+(var res1 res2 i j k N M Int)
+(var A B (Int) Int)
+(var mult (Int Int) Int)
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j res1 res2 0))
+(assume (= k M))
+
+(par
+    (while (< i N)
+        (set! res1 (+ res1 (mult (A i) (B i))))
+        (set! i (+ i 1)))
+    (while (< j M)
+        (set! res2 (+ res2 (mult (A j) (B j))))
+        (set! j (+ j 1)))
+    (while (< k N)
+        (set! res2 (+ res2 (mult (A k) (B k))))
+        (set! k (+ k 1))))
+
+(assume (not (= res1 res2)))
