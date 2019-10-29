@@ -1,10 +1,10 @@
-(var sum1 sum2 sum3 i j k N M Int)
+(var sum1 sum2 i j k N M Int)
 (var A (Array Int Int))
 
 
 (assume (<= 0 M))
 (assume (< M N))
-(assume (= i j sum1 sum2 sum3 0))
+(assume (= i j sum1 sum2 0))
 (assume (= k M))
 
 (par
@@ -18,7 +18,7 @@
         (set! j (+ j 1))))
     (while (< k N)
         (atomic
-        (set! sum3 (+ sum3 (select A k)))
+        (set! sum2 (+ sum2 (select A k)))
         (set! k (+ k 1)))))
 
-(assume (not (= sum1 (+ sum2 sum3))))
+(assume (not (= sum1 sum2)))

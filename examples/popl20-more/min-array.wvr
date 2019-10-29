@@ -1,10 +1,10 @@
-(var min1 min2 min3 i j k N M Int)
+(var min1 min2 i j k N M Int)
 (var A (Array Int Int))
 
 
 (assume (<= 0 M))
 (assume (< M N))
-(assume (= i j min1 min2 min3 0))
+(assume (= i j min1 min2 0))
 (assume (= k M))
 
 (par
@@ -18,7 +18,7 @@
         (set! j (+ j 1))))
     (while (< k N)
         (atomic
-        (set! min3 (if (> min3 (select A k)) (select A k) min3))
+        (set! min2 (if (> min2 (select A k)) (select A k) min2))
         (set! k (+ k 1)))))
 
-(assume (not (= min1 (if (> min2 min3) min3 min2))))
+(assume (not (= min1 min2)))
