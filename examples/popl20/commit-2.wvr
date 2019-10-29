@@ -1,0 +1,74 @@
+(var manager (Int) Int)
+(var manager-front manager-back Int)
+(var client (Int) Int)
+(var client-front client-back Int)
+(var node-1 (Int) Int)
+(var node-1-front node-1-back Int)
+(var node-2 (Int) Int)
+(var node-2-front node-2-back Int)
+(var update ok Int)
+(var safe Bool)
+
+(assume (and
+  (= safe true)
+  (= manager-front manager-back)
+  (= client-front client-back)
+  (= node-1-front node-1-back)
+  (= node-2-front node-2-back)))
+
+(par
+  ; manager
+  (loop
+    (atomic
+      (assume (> manager-back manager-front))
+      (set! safe (and safe (= (manager manager-front) update)))
+      (set! manager-front (+ manager-front 1)))
+    (atomic
+      (assume (= (node-1 node-1-back) update))
+      (set! node-1-back (+ node-1-back 1)))
+    (atomic
+      (assume (= (node-2 node-2-back) update))
+      (set! node-2-back (+ node-2-back 1)))
+    (atomic
+      (assume (> manager-back manager-front))
+      (set! safe (and safe (= (manager manager-front) ok)))
+      (set! manager-front (+ manager-front 1)))
+    (atomic
+      (assume (> manager-back manager-front))
+      (set! safe (and safe (= (manager manager-front) ok)))
+      (set! manager-front (+ manager-front 1)))
+    (atomic
+      (assume (= (client client-back) ok))
+      (set! client-back (+ client-back 1))))
+
+  ; node-1
+  (loop
+    (atomic
+      (assume (> node-1-back node-1-front))
+      (set! safe (and safe (= (node-1 node-1-front) update)))
+      (set! node-1-front (+ node-1-front 1)))
+    (atomic
+      (assume (= (manager manager-back) ok))
+      (set! manager-back (+ manager-back 1))))
+
+  ; node-2
+  (loop
+    (atomic
+      (assume (> node-2-back node-2-front))
+      (set! safe (and safe (= (node-2 node-2-front) update)))
+      (set! node-2-front (+ node-2-front 1)))
+    (atomic
+      (assume (= (manager manager-back) ok))
+      (set! manager-back (+ manager-back 1))))
+
+  ; client
+  (loop
+    (atomic
+      (assume (= (manager manager-back) update))
+      (set! manager-back (+ manager-back 1)))
+    (atomic
+      (assume (> client-back client-front))
+      (set! safe (and safe (= (client client-front) ok)))
+      (set! client-front (+ client-front 1)))))
+
+(assume (not safe))
