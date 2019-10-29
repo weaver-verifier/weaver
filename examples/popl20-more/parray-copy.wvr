@@ -1,0 +1,25 @@
+(var i j k l N M Int)
+(var A B (Array Int Int))
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j 0))
+(assume (= k M))
+(assume (<= 0 l))
+(assume (< l N))
+
+(par
+    (while (< i N)
+        (atomic
+        (store! B i (select A i))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (store! B j (select A j))
+        (set! j (+ j 1))))
+    (while (< k N)
+        (atomic
+        (store! B k (select A k))
+        (set! k (+ k 1)))))
+
+(assume (not (= (select A l) (select B l))))

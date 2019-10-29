@@ -1,5 +1,5 @@
 (var res1 res2 i j k N M Int)
-(var A B (Int) Int)
+(var A B (Array Int Int))
 (var mult (Int Int) Int)
 
 (assume (<= 0 M))
@@ -10,15 +10,15 @@
 (par
     (while (< i N)
         (atomic
-        (set! res1 (+ res1 (mult (A i) (B i))))
+        (set! res1 (+ res1 (mult (select A i) (select B i))))
         (set! i (+ i 1))))
     (while (< j M)
         (atomic
-        (set! res2 (+ res2 (mult (A j) (B j))))
+        (set! res2 (+ res2 (mult (select A j) (select B j))))
         (set! j (+ j 1))))
     (while (< k N)
         (atomic
-        (set! res2 (+ res2 (mult (A k) (B k))))
+        (set! res2 (+ res2 (mult (select A k) (select B k))))
         (set! k (+ k 1)))))
 
 (assume (not (= res1 res2)))
