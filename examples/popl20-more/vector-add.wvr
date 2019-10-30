@@ -1,4 +1,4 @@
-(var i j k l N M Int)
+(var i j k N M Int)
 (var A B (Int) Int)
 (var C1 C2 (Array Int Int))
 
@@ -7,8 +7,6 @@
 (assume (= i j 0))
 (assume (= k M))
 (assume (= C1 C2))
-(assume (<= 0 l))
-(assume (<  l N))
 
 (par
     (while (< i N)
@@ -24,4 +22,4 @@
         (store! C2 k (+ (A k) (B k)))
         (set! k (+ k 1)))))
 
-(assume (not (= (select C1 l) (select C2 l))))
+(assume (not (= C1 C2)))
