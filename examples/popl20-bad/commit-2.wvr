@@ -1,0 +1,104 @@
+(var manager (Int) Int)
+(var manager-front manager-back Int)
+(var client (Int) Int)
+(var client-front client-back Int)
+(var node-1 (Int) Int)
+(var node-1-front node-1-back Int)
+(var node-2 (Int) Int)
+(var node-2-front node-2-back Int)
+(var manager-state client-state node-1-state node-2-state Int)
+(var update ok Int)
+(var safe Bool)
+
+(assume (and
+  (= safe true)
+  (= manager-front manager-back)
+  (= client-front client-back)
+  (= node-1-front node-1-back)
+  (= node-2-front node-2-back)
+  (= manager-state node-1-state node-2-state client-state 0)))
+
+(par
+  ; manager
+  (loop
+    (cond
+      (atomic
+        (assume (= manager-state 0))
+        (assume (> manager-back manager-front))
+        (set! safe (= (manager manager-front) update))
+        (set! manager-front (+ manager-front 1))
+        (set! manager-state 1))
+      (atomic
+        (assume (= manager-state 1))
+        (assume (= (node-1 node-1-back) update))
+        (set! node-1-back (+ node-1-back 1))
+        (set! manager-state 2))
+      (atomic
+        (assume (= manager-state 2))
+        (assume (= (node-2 node-2-back) update))
+        (set! node-2-back (+ node-2-back 1))
+        (set! manager-state 3))
+      (atomic
+        (assume (= manager-state 3))
+        (assume (> manager-back manager-front))
+        (set! safe (= (manager manager-front) ok))
+        (set! manager-front (+ manager-front 1))
+        (set! manager-state 4))
+      (atomic
+        (assume (= manager-state 4))
+        (assume (> manager-back manager-front))
+        (set! safe (= (manager manager-front) ok))
+        (set! manager-front (+ manager-front 1))
+        (set! manager-state 5))
+      (atomic
+        (assume (= manager-state 5))
+        (assume (= (client client-back) ok))
+        (set! client-back (+ client-back 1))
+        (set! manager-state 0))))
+
+  ; node-1
+  (loop
+    (cond
+      (atomic
+        (assume (= node-1-state 0))
+        (assume (> node-1-back node-1-front))
+        (set! safe (= (node-1 node-1-front) update))
+        (set! node-1-front (+ node-1-front 1))
+        (set! node-1-state 1))
+      (atomic
+        (assume (= node-1-state 1))
+        (assume (= (manager manager-back) ok))
+        (set! manager-back (+ manager-back 1))
+        (set! node-1-state 0))))
+
+  ; node-2
+  (loop
+    (cond
+      (atomic
+        (assume (= node-2-state 0))
+        (assume (> node-2-back node-2-front))
+        (set! safe (= (node-2 node-2-front) update))
+        (set! node-2-front (+ node-2-front 1))
+        (set! node-2-state 1))
+      (atomic
+        (assume (= node-2-state 1))
+        (assume (= (manager manager-back) ok))
+        (set! manager-back (+ manager-back 1))
+        (set! node-2-state 0))))
+
+  ; client
+  (loop
+    (cond
+      (atomic
+        (assume (= client-state 0))
+        (assume (= (manager manager-back) update))
+        (set! manager-back (+ manager-back 1))
+        (set! client-state 1))
+      (atomic
+        (assume (= client-state 1))
+        (assume (> client-back client-front))
+        (set! safe (= (client client-front) ok))
+        (set! client-front (+ client-front 1))
+        (set! client-state 0)))))
+
+(assume (not safe))

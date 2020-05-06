@@ -1,0 +1,47 @@
+(var L N M p q Int)
+
+;(use (<= L 3)
+;     (= p q)
+;     (and (= (+ M q) p) (= (+ N 1) L))
+;     (and (= N L) (= p q))
+;     (and (> N 0) (= N L) (= p q))
+;     (and (> N 1) (<= (+ N 2) L))
+;     (and (> N 1) (= (+ q M) p) (<= (+ N 1) L))
+;     (or (<= L 1) (<= L (+ N 2)))
+;     (or (<= L 2) (<= L (+ N 3)))
+;     (or (<= (+ N 2) L) (<= N 0))
+;     (or (<= (+ N 2) L) (<= N 1))
+;     (or (<= (+ N 3) L) (<= N 0))
+;     (or (= p q) (<= 1 L))
+;     (or (= p (+ (* 2 M) q)) (<= 3 L) (<= L 1))
+;     (or (= p (+ (* 2 M) (+ q M))) (<= L 2))
+;     (or (= p (+ (* 2 M) (- q M))) (<= 2 L) (<= L 0))
+;     (or (= p (+ (- M) q (* 2 M))) (<= 2 L))
+;     (or (and (= p (+ q M)) (<= 1 N)) (<= 3 L) (<= L (- 1)))
+;     (or (and (= p (+ q (* 2 M)))) (<= L 1))
+;     (or (and (<= 0 (+ N (- 1))) (<= N L)) (<= 2 L))
+;     (or (and (<= 0 (+ N (- 1))) (= p q)) (<= 2 L))
+;     (or (and (= (+ q M) p) (= L (+ N 1)) (<= 2 N)) (<= L 0))
+;     (or (and (= (+ q (* 2 M)) p) (= N (- L 2))) (<= L 1))
+;     (or (and (= (+ q (* 2 M)) p) (= N (- L 2)) (<= 2 N)) (<= L 1))
+;     (or (and (not (<= N 0)) (= p (+ q (* 2 M)))) (<= L 1)))
+
+(assume (and
+  (= p q 0)
+  (= L N)))
+
+(par
+  (while (< 0 N)
+    (atomic
+      (set! p (if (> N 0) (+ p M) p))
+      (set! N (if (> N 0) (- N 1) N))))
+  (while (< 1 N)
+    (atomic
+      (set! p (if (> N 1) (+ p (+ M M)) p))
+      (set! N (if (> N 1) (- N 2) N))))
+  (while (< 0 L)
+    (atomic
+      (set! q (+ q M))
+      (set! L (+ L (- 1))))))
+
+(assume (not (= p q)))

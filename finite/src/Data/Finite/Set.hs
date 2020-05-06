@@ -25,15 +25,17 @@ module Data.Finite.Set (
   mapStrongFst, mapStrongSnd,
   cartesianProduct,
   toList, fromList,
+  fromPredicate, filter,
   map, bind,
   foldMap, traverse
 ) where
 
-import           Prelude hiding (foldMap, map, traverse)
+import           Prelude hiding (filter, foldMap, map, traverse)
 import qualified Prelude
 import           Data.Bits ((.&.), (.|.), bit, clearBit, setBit, shiftL, testBit)
 import qualified Data.Bits as Bits
 import           Data.Finite.Class (Finitary (..), size)
+import qualified Data.Finite.Class as Finite
 import           Data.Finite.Internal (Finite (..))
 import           Data.Foldable (foldl')
 import           Data.These (These)
@@ -137,6 +139,12 @@ toList (Set' n) = go 0
 
 fromList ∷ Finitary a ⇒ [a] → Set a
 fromList = foldl' (flip insert) empty
+
+fromPredicate ∷ Finitary a ⇒ (a → Bool) → Set a
+fromPredicate p = fromList (Prelude.filter p Finite.universe)
+
+filter ∷ Finitary a ⇒ (a → Bool) → Set a → Set a
+filter p = intersection (fromPredicate p)
 
 map ∷ (Finitary a, Finitary b) ⇒ (a → b) → Set a → Set b
 map f = fromList . fmap f . toList

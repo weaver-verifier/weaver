@@ -1,0 +1,24 @@
+(var max1 max2 i j k N M Int)
+(var A (Int) Int)
+
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j max1 max2 0))
+(assume (= k M))
+
+(par
+    (while (< i N)
+        (atomic
+        (set! max1 (if (< max1 (A i)) (A i) max1))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (set! max2 (if (< max2 (A j)) (A j) max2))
+        (set! j (+ j 1))))
+    (while (< k N)
+        (atomic
+        (set! max2 (if (< max2 (A k)) (A k) max2))
+        (set! k (+ k 1)))))
+
+(assume (not (= max1 max2)))

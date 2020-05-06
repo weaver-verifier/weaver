@@ -1,0 +1,40 @@
+; -s yices-smtinterpol -m total-progress-context-opt --semi -b rr
+(var queue (Int) Int)
+(var front back x Int)
+(use
+false
+true
+(<= back front)
+(<= back (+ front 1))
+(<= front (+ back (- 1)))
+(= back front)
+(= x 5)
+(= 5 (queue front))
+(= 5 (queue (+ front 1)))
+(= 5 (queue (+ (+ front 1) 1)))
+(= (+ back (- front)) 0)
+(= (+ front (- back)) 0)
+(= (+ x (- 5)) 0)
+(and (<= back (+ front 1)) (<= front (+ back (- 1))))
+(and (<= back (+ (+ front 1) 1)) (<= (+ front 1) (+ back (- 1))))
+)
+
+;(use
+;  (and (= x 5)               (=  size 0))
+;  (and (= x 5 (queue front)) (=  size 1))
+;  (and (= x 5 (queue front)) (>= size 2)))
+
+(assume (and (= front back) (= x 5)))
+
+(par
+  (loop
+    (atomic
+      (assume (= (queue back) 5))
+      (set! back (+ back 1))))
+  (loop
+    (atomic
+      (assume (> back front))
+      (set! x     (queue front))
+      (set! front (+ front 1)))))
+
+(assume (not (= x 5)))

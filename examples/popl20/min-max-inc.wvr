@@ -1,0 +1,35 @@
+(var A (Array Int Int))
+(var min max i j k l N Int)
+(var assert b1 b2 Bool)
+
+(assume (and
+  (= i j k l 0)
+  (= assert b1 b2 false)))
+
+(par
+  (seq
+    (set! min (select A 0))
+    (set! b1 true)
+    (while (< i N)
+      (atomic
+        (set! min (if (< min (select A i)) min (select A i)))
+        (set! i (+ i 1)))))
+  (seq
+    (set! max (select A 0))
+    (set! b2 true)
+    (while (< j N)
+      (atomic
+        (set! max (if (> max (select A j)) max (select A j)))
+        (set! j (+ j 1)))))
+  (while  (< k N)
+    (atomic
+      (store! A k (+ (select A k) 1))
+      (set! k (+ k 1))))
+;  (while  (< l N)
+;    (atomic
+;      (store! A l (- (select A l) 1))
+;      (set! l (+ l 1))))
+   (set! assert (=> b1 b2 (<= min (+ max 1))))
+)
+
+(assume (not assert))

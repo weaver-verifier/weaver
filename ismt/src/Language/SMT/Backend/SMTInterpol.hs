@@ -11,7 +11,6 @@ module Language.SMT.Backend.SMTInterpol where
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.List.NonEmpty (toList)
 import Data.IORef (newIORef, readIORef, writeIORef)
-import Data.Semigroup ((<>))
 import Data.Text (pack)
 import Data.Traversable (for)
 import Numeric.Natural (Natural)
@@ -38,7 +37,10 @@ smtInterpol script = liftIO $ do
 
   success ["set-option", ":verbosity", 2]
   success ["set-option", ":produce-interpolants", "true"]
-  success ["set-logic", "QF_UFLIA"]
+  success ["set-option", ":simplify-interpolants", "true"]
+  success ["set-option", ":print-terms-cse", "false"]
+  success ["set-option", ":proof-transformation", "LURPI"]
+  success ["set-logic", "QF_AUFLIA"]
 
   let backendDeclare x ps r = success ["declare-fun", x, ps, r]
 

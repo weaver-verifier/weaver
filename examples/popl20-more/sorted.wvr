@@ -1,0 +1,28 @@
+(var i j k N M Int)
+(var sorted1 sorted2 sorted3 Bool)
+(var A (Int) Int)
+
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j 0))
+(assume (= k M))
+(assume sorted1)
+(assume sorted2)
+(assume sorted3)
+
+(par
+    (while (< i (- N 1))
+        (atomic
+        (set! sorted1 (and sorted1 (< (A i) (A (+ i 1)))))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (set! sorted2 (and sorted2 (< (A j) (A (+ j 1)))))
+        (set! j (+ j 1))))
+    (while (< k (- N 1))
+        (atomic
+        (set! sorted3 (and sorted3 (< (A k) (A (+ k 1)))))
+        (set! k (+ k 1)))))
+
+(assume (not (= sorted1 (and sorted2 sorted3))))

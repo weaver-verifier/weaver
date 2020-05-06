@@ -1,0 +1,24 @@
+(var sum1 sum2 i j k N M Int)
+(var A (Array Int Int))
+
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j sum1 sum2 0))
+(assume (= k M))
+
+(par
+    (while (< i N)
+        (atomic
+        (set! sum1 (+ sum1 (select A i)))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (set! sum2 (+ sum2 (select A j)))
+        (set! j (+ j 1))))
+    (while (< k N)
+        (atomic
+        (set! sum2 (+ sum2 (select A k)))
+        (set! k (+ k 1)))))
+
+(assume (not (= sum1 sum2)))

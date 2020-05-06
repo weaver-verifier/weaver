@@ -1,0 +1,23 @@
+(var queue (Int) Int)
+(var front size x Int)
+
+;(use
+;  (and (= x 5)               (=  size 0))
+;  (and (= x 5 (queue front)) (=  size 1))
+;  (and (= x 5 (queue front)) (>= size 2)))
+
+(assume (and (= size 0) (= x 5)))
+
+(par
+  (loop
+    (atomic
+      (assume (= (queue (+ front size)) 5))
+      (set! size (+ size 1))))
+  (loop
+    (atomic
+      (assume (> size 0))
+      (set! x     (queue front))
+      (set! front (+ front 1))
+      (set! size  (- size 1)))))
+
+(assume (not (= x 5)))

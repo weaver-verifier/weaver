@@ -1,0 +1,20 @@
+(var A (Array Int Int))
+(var min max i j N Int)
+(var assert Bool)
+
+(assume (and
+  (= i j 0)
+  (= min (select A 0))
+  (= max (select A 0))
+  (= assert false)))
+
+(par
+  (while (< i N)
+      (set! min (if (< min (select A i)) min (select A i)))
+      (set! i (+ i 1)))
+  (while (< j N)
+      (set! max (if (> max (select A j)) max (select A j)))
+      (set! j (+ j 1)))
+  (set! assert (<= min max)))
+
+(assume (not assert))

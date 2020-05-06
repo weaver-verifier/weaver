@@ -1,0 +1,19 @@
+(var j1 j2 M1 M2 C counter Int)
+
+(assume (= j1 0))
+(assume (= j2 0))
+(assume (= counter 0))
+(assume (= M2 M1))
+(assume (< 0 M2))
+
+(par
+  (while (< j1 M1)
+    (atomic
+      (set! counter (+ counter C))
+      (set! j1 (+ j1 1))))
+  (while (< j2 M2)
+    (atomic
+      (set! j2 (if (< 0 counter) (+ j2 1) j2))
+      (set! counter (if (< 0 counter) (- counter C) counter)))))
+
+(assume (not (= counter 0)))

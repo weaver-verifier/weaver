@@ -8,7 +8,7 @@
 module Data.Finite.Small.Internal where
 
 import Prelude hiding (lookup)
-import Data.Align (Align)
+import Data.Align (Align, Semialign)
 import Data.Finite.Small (Small, fromInt, toInt)
 import Data.Functor.Bind (Apply (..), Bind (..))
 import Data.Functor.Plus (Alt (..), Plus (..))
@@ -26,7 +26,7 @@ newtype Set a = Set IntSet
 --
 -- This is internally represented as an 'IntMap'.
 newtype Map k a = Map (IntMap a)
-  deriving (Align, Apply, Bind, Eq, Foldable, Functor, Ord, Plus, Traversable)
+  deriving (Align, Apply, Bind, Eq, Foldable, Functor, Ord, Plus, Semialign, Traversable)
 
 instance Small k ⇒ FoldableWithKey (Map k) where
   foldrWithKey f z (Map xs) = foldrWithKey (f . fromInt) z xs

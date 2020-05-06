@@ -1,0 +1,20 @@
+(var i1 i2 N1 N2 counter Int)
+
+(assume (= i1 0))
+(assume (= counter 0))
+(assume (= i2 0))
+(assume (<= 0 N1))
+(assume (<= 0 N2))
+
+(par
+  (while (< i1 N1)
+    (atomic
+      (set! counter (+ counter 1))
+      (set! i1 (+ i1 1))))
+  (while (< i2 N2)
+    (atomic
+      (assume (< 0 counter))
+      (set! counter (- counter 1))
+      (set! i2 (+ i2 1)))))
+
+(assume (not (= counter (- N1 N2))))

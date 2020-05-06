@@ -1,0 +1,30 @@
+(var A (Array Int Int))
+(var C (Array Int Int))
+(var B (Array Int Int))
+
+(var mina minb minc p i k l N Int)
+
+(assume (= i k l p 1))
+(assume (<= 0 N))
+(assume (= mina (select A 0)))
+(assume (= minb (select B 0)))
+(assume (= minc (+ (select A 0) (select B 0))))
+
+(par
+  (while (< i N)
+    (atomic
+      (set! mina (if (< mina (select A i)) mina (select A i)))
+      (set! minb (if (< minb (select B i)) minb (select B i)))
+      (set! i (+ i 1))))
+  (while (< k N)
+    (atomic
+      (store! C k (+ (select A k) (select B k)))
+      (set! k (+ k 1))
+      (set! p k)))
+  (while (< l N)
+    (if (< l p)
+      (atomic
+        (set! minc (if (< minc (select C l)) minc (select C l)))
+        (set! l (+ l 1))))))
+
+(assume (not (>= minc (+ mina minb))))

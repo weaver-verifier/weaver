@@ -1,0 +1,26 @@
+(var queue (Int) Int)
+(var front back Int)
+(var sum Int)
+(var assert b Bool)
+
+(assume (= front back))
+(assume (= sum 0))
+(assume assert)
+(assume b)
+
+(par
+  (while assert
+    (atomic
+      (assume (> back front))
+      (set! sum (+ sum (queue front)))
+      (set! front (+ front 1))))
+  (while assert
+    (if b
+      (atomic
+        (assume (= (queue back) 1))
+        (set! back (+ back 1)))
+      (atomic
+        (assume (= (queue back) (- 1)))
+        (set! back (+ back 1))))
+    (set! b (not b)))
+  (set! assert (and (<= 0 sum) (<= sum 1))))

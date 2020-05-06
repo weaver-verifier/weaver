@@ -1,28 +1,40 @@
 {-# LANGUAGE
     BlockArguments,
     DataKinds,
+    FlexibleInstances,
     GADTs,
+    ImplicitParams,
+    MultiParamTypeClasses,
+    TypeFamilies,
     OverloadedLists,
     OverloadedStrings,
-    UnicodeSyntax
+    UnicodeSyntax,
+    ViewPatterns
   #-}
 
-module Weaver.Stmt (V, mkV, Stmt (..), prove, isTriple, isSwappable) where
+module Weaver.Stmt (V, mkV, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
 
 import qualified Prelude as P
-import Prelude hiding (and, not)
+import Prelude hiding (and, not, null, map)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.State (State, evalState, get, modify', put, runState)
-import Data.Dependent.Map (DMap, delete, empty, findWithDefault, foldrWithKey, insert)
+import Control.Monad.State (State, evalState, get, put)
+import Data.Bifunctor (bimap)
+import Data.Constraint (Dict (..))
+import Data.Constraint.Compose (ComposeC)
+import Data.Constraint.Extras (ArgDict (..))
+import Data.Dependent.Sum (DSum (..))
+import Data.Dependent.Map (DMap, empty, findWithDefault, foldrWithKey, insert, intersectionWithKey, null, map, mapWithKey, singleton, union, toList)
+import Data.Functor.Const (Const (..))
 import Data.GADT.Compare (GEq (..), GCompare (..), GOrdering (..), gcompare, geq)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Data.Type.Equality ((:~:) (..))
-import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var)
+import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var, imp)
 import Language.SMT.SExpr (SExpr (..), SExpressible (..))
 import Language.SMT.Solver (Solver, interpolate, isSatisfiable, isValid)
 import Language.SMT.Var (Var (..), Sorts (..), Rank (..))
 import Numeric.Natural (Natural)
+import Weaver.Config
 
 data V a = V Text Natural (Rank a)
 
@@ -55,6 +67,20 @@ instance Var V where
 
 newtype U a = U { toV ∷ V '( '[], a) }
 
+instance ArgDict (ComposeC Eq (Expr V)) U where
+  type ConstraintsFor U (ComposeC Eq (Expr V)) = ()
+  argDict (U _) = Dict
+
+instance ArgDict (ComposeC Ord (Expr V)) U where
+  type ConstraintsFor U (ComposeC Ord (Expr V)) = ()
+  argDict (U _) = Dict
+
+-- instance EqTag U (Expr V) where
+--   eqTagged (U _) (U _) = (==)
+
+-- instance OrdTag U (Expr V) where
+--   compareTagged (U _) (U _) = compare
+
 instance GEq U where
   geq (U x₁) (U x₂) = do
     Refl ← geq x₁ x₂
@@ -67,46 +93,45 @@ instance GCompare U where
       GEQ → GEQ
       GGT → GGT
 
-data Stmt
-  = Assume (Expr V Bool)
-  | ∀ a. Assign (V '( '[], a)) (Expr V a)
-  | ∀ a. Havoc (V '( '[], a))
-  | Atomic [Stmt]
+data Stmt = Stmt Bool [Expr V Bool] (DMap U (Expr V))
+  deriving (Eq, Ord)
 
-instance Eq Stmt where
-  Assume φ == Assume ψ = φ == ψ
-  Assign x₁ expr₁ == Assign x₂ expr₂ =
-    case geq x₁ x₂ of
-      Just Refl → expr₁ == expr₂
-      Nothing   → False
-  Atomic stmts₁ == Atomic stmts₂ = stmts₁ == stmts₂
-  _ == _ = False
+isArtificial ∷ Stmt → Bool
+isArtificial (Stmt b _ _) = b
 
-instance Ord Stmt where
-  compare (Assume φ) (Assume ψ) = compare φ ψ
-  compare (Assume _) _ = LT
-  compare _ (Assume _) = GT
-  compare (Assign x₁ expr₁) (Assign x₂ expr₂) =
-    case gcompare x₁ x₂ of
-      GLT → LT
-      GGT → GT
-      GEQ → compare expr₁ expr₂
-  compare (Assign _ _) _ = LT
-  compare _ (Assign _ _) = GT
-  compare (Havoc x₁) (Havoc x₂) =
-    case gcompare x₁ x₂ of
-      GLT → LT
-      GGT → GT
-      GEQ → EQ
-  compare (Havoc _) _ = LT
-  compare (Atomic stmts₁) (Atomic stmts₂) = compare stmts₁ stmts₂
-  compare (Atomic _) _ = GT
+artificial ∷ Expr V Bool → Stmt
+artificial φ = Stmt True [φ] empty
+
+assume ∷ Expr V Bool → Stmt
+assume φ = Stmt False [φ] empty
+
+assign ∷ V '( '[], a) → Expr V a → Stmt
+assign x e = Stmt False [] (singleton (U x) e)
+
+atomic ∷ [Stmt] → Stmt
+atomic [] = Stmt False [] empty
+atomic (Stmt b φs xs : zs) =
+  let Stmt c ψs ys = atomic zs
+  in  Stmt (b || c) (φs ++ fmap (subst xs) ψs) (union (map (subst xs) ys) xs)
+
+indep ∷ (?config ∷ Config) ⇒ Stmt → Stmt → Expr V Bool
+indep stmt₁ stmt₂ =
+  let Stmt _ φs₁ xs₁ = atomic [stmt₁, stmt₂]
+      Stmt _ φs₂ xs₂ = atomic [stmt₂, stmt₁]
+      xs₁' = union xs₁ (mapWithKey (\(U k) _ → var k ()) xs₂)
+      xs₂' = union xs₂ (mapWithKey (\(U k) _ → var k ()) xs₁)
+      eqs  = intersectionWithKey (\_ x₁ x₂ → Const (eq [x₁, x₂])) xs₁' xs₂'
+      eqs' = foldrWithKey (\_ → (:) . getConst) [] eqs
+      imp₁ = imp [and φs₁, and (φs₂ ++ eqs')]
+      imp₂ = imp [and φs₂, and (φs₁ ++ eqs')]
+  in if semi then imp₁ else and [imp₁, imp₂]
 
 instance SExpressible Stmt where
-  toSExpr (Assume φ) = ["assume", toSExpr φ]
-  toSExpr (Assign x expr) = ["set!", toSExpr x, toSExpr expr]
-  toSExpr (Havoc x) = ["havoc!", toSExpr x]
-  toSExpr (Atomic stmts) = List ("atomic" : map toSExpr stmts)
+  toSExpr (Stmt _ [φ] xs) | null xs = ["assume", toSExpr φ]
+  toSExpr (Stmt _ [] (toList → [U k :=> v])) = ["set!", toSExpr k, toSExpr v]
+  toSExpr (Stmt _ φs xs) = List ("group" : φs' ++ xs')
+    where φs' = fmap (\φ → ["assume", toSExpr φ]) φs
+          xs' = foldrWithKey (\(U k) v → (["set!", toSExpr k, toSExpr v]:)) [] xs
 
 rename ∷ DMap U U → Expr V a → Expr V a
 rename m = emap \x →
@@ -114,51 +139,31 @@ rename m = emap \x →
     Rank SNil _ → toV (findWithDefault (U x) (U x) m)
     _           → x
 
-interpret ∷ Stmt → State (DMap U U) [Expr V Bool]
-interpret (Assume φ) = (\m → [rename m φ]) <$> get
-interpret (Atomic stmts) = concat <$> traverse interpret stmts
-interpret (Havoc x) = do
+interpret ∷ Stmt → State (DMap U U) (Expr V Bool)
+interpret (Stmt _ φs xs) = do
   m ← get
-  let x' = prime (toV (findWithDefault (U x) (U x) m))
-  put (insert (U x) (U x') m)
-  return []
-interpret (Assign x expr) = do
-  m ← get
-  let x'    = prime (toV (findWithDefault (U x) (U x) m))
-      expr' = rename m expr
-  put (insert (U x) (U x') m)
-  return [eq [var x' (), expr']]
+  let φs' = fmap (rename m) φs
+      (m', xs') = foldrWithKey
+        (\(U k) v →
+          let k' = prime (toV (findWithDefault (U k) (U k) m))
+              v' = rename m v
+          in bimap (insert (U k) (U k')) (eq [var k' (), v'] :))
+        (m, []) xs
+  put m'
+  return (and (φs' ++ xs'))
 
 shift ∷ Traversable f ⇒ f Stmt → f (Expr V Bool)
-shift stmts = and <$> evalState (traverse interpret stmts) empty
+shift stmts = evalState (traverse interpret stmts) empty
 
 subst ∷ DMap U (Expr V) → Expr V a → Expr V a
 subst m = ebind \x → findWithDefault (var x ()) (U x) m
-
-evaluate ∷ Stmt → State (DMap U (Expr V)) [Expr V Bool]
-evaluate (Assume φ) = (\m → [subst m φ]) <$> get
-evaluate (Atomic stmts) = concat <$> traverse evaluate stmts
-evaluate (Havoc x) = do
-  modify' (delete (U x))
-  return []
-evaluate (Assign x expr) = do
-  modify' \m → insert (U x) (subst m expr) m
-  return []
-
-compress ∷ Stmt → Expr V Bool
-compress stmt =
-  let (exprs, binds) = runState (evaluate stmt) empty
-  in  and (foldrWithKey (\x e φs → eq [var (prime (toV x)) (), e] : φs) exprs binds)
 
 prove ∷ MonadIO m ⇒ Solver V → NonEmpty Stmt → m (Maybe [Expr V Bool])
 prove solver = fmap (fmap (fmap (emap unprime))) . interpolate solver . shift
 
 isTriple ∷ MonadIO m ⇒ Solver V → Expr V Bool → Stmt → Expr V Bool → m Bool
 isTriple solver φ stmt ψ =
-  P.not <$> isSatisfiable solver (and (shift [Assume φ, stmt, Assume (not ψ)]))
+  P.not <$> isSatisfiable solver (and (shift [assume φ, stmt, assume (not ψ)]))
 
-isSwappable ∷ MonadIO m ⇒ Solver V → Stmt → Stmt → m Bool
-isSwappable solver stmt₁ stmt₂ = do
-  let expr₁ = compress (Atomic [stmt₁, stmt₂])
-      expr₂ = compress (Atomic [stmt₂, stmt₁])
-  isValid solver (eq [expr₁, expr₂])
+isIndep ∷ (MonadIO m, ?config ∷ Config) ⇒ Solver V → Expr V Bool → Stmt → Stmt → m Bool
+isIndep solver φ stmt₁ stmt₂ = isValid solver (imp [φ, indep stmt₁ stmt₂])

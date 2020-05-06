@@ -1,0 +1,50 @@
+; -m total-progress-context-opt -b rr
+(var queue (Int) Int)
+(var front back Int)
+(var sum Int)
+(var b Bool)
+(use
+b
+false
+true
+(<= back front)
+(<= front back)
+(<= (+ front (* (- 1) back)) (- 1))
+(= front back)
+(and (<= sum 1) (<= 1 sum))
+(and (<= 0 sum) (<= sum 0))
+(and (<= (+ sum (queue front)) 0) (<= 0 (+ sum (queue front))))
+(and (<= (+ sum (queue front)) 1) (<= 1 (+ sum (queue front))))
+(and (= front back) (<= back front))
+(and (and (<= (+ sum (queue front)) 1) (<= 1 (+ sum (queue front)))) (<= (- 1) (+ front (* (- 1) back))))
+(and (<= back front) (and (and (= front back) (<= sum 0)) (and (= front back) (<= 0 sum))))
+(and (and (= front back) (<= sum 0)) (and (= front back) (<= 0 sum)))
+(and (and (<= sum 1) (= front back)) (and (<= 1 sum) (= front back)))
+(or (and (<= back front) (and (and (<= sum 1) (= front back)) (and (<= 1 sum) (= front back)))) (<= 1 (+ front (* (- 1) back))))
+(or (<= (+ back (* (- 1) front)) (- 1)) (and (and (<= sum 0) (= back front)) (and (<= 0 sum) (= back front))))
+(not b)
+(or (<= back front) (and (<= (+ sum (queue front)) 1) (<= 1 (+ sum (queue front)))))
+(or (<= back front) (and (and (<= (+ sum (queue front)) 0) (<= 0 (+ sum (queue front)))) (<= (- 1) (+ front (* (- 1) back)))))
+)
+
+(assume (= front back))
+(assume (= sum 0))
+(assume b)
+
+(par
+  (loop
+    (atomic
+      (assume (> back front))
+      (set! sum (+ sum (queue front)))
+      (set! front (+ front 1))))
+  (loop
+    (if b
+      (atomic
+        (assume (= (queue back) 1))
+        (set! back (+ back 1)))
+      (atomic
+        (assume (= (queue back) (- 1)))
+        (set! back (+ back 1))))
+    (set! b (not b))))
+
+(assume (not (and (<= 0 sum) (<= sum 1))))

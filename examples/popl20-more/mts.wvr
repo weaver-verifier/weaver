@@ -1,0 +1,24 @@
+(var mts1 mts2 mts3 sum i j k N M Int)
+(var A (Int) Int)
+
+(assume (<= 0 M))
+(assume (< M N))
+(assume (= i j mts1 mts2 mts3 sum 0))
+(assume (= k M))
+
+(par
+    (while (< i N)
+        (atomic
+        (set! mts1 (if (< (+ mts1 (A i)) 0) 0 (+ mts1 (A i))))
+        (set! i (+ i 1))))
+    (while (< j M)
+        (atomic
+        (set! mts2 (if (< (+ mts2 (A j)) 0) 0 (+ mts2 (A j))))
+        (set! j (+ j 1))))
+    (while (< k N)
+        (atomic
+        (set! mts3 (if (< (+ mts3 (A k)) 0) 0 (+ mts3 (A k))))
+        (set! sum (+ sum (A k)))
+        (set! k (+ k 1)))))
+
+(assume (not (= mts1 (if (< mts3 (+ mts2 sum)) (+ mts2 sum) mts3))))

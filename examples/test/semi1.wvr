@@ -1,0 +1,18 @@
+(var x y Int)
+
+(use (= x y))
+
+; If you uncomment this line and comment out the next, the proof doesn't work.
+; This indicates that we only need to reason about the case when the increment happens first.
+;(use (= y (+ x 1)))
+(use (= x (+ y 1)))
+
+(assume (= x y))
+
+(par
+  (set! x (+ x 1))
+  (atomic
+    (assume (>= x 0))
+    (set! x (- x 1))))
+
+(assume (not (= x y)))

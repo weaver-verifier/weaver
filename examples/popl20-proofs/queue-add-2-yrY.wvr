@@ -1,0 +1,85 @@
+; -s yices-smtinterpol -m total-progress-context-opt --semi -b rr
+(var q (Int) Int)
+(var q-front q-back Int)
+(var i j s N Int)
+(var f Bool)
+(use
+f
+false
+true
+(<= q-back q-front)
+(<= q-back (+ q-front 1))
+(<= q-front (+ q-back (- 1)))
+(<= q-front (+ q-back (- 2)))
+(<= 0 N)
+(<= (+ N (- i)) 0)
+(= j 0)
+(= q-back q-front)
+(= 0 (q q-front))
+(= 1 (q q-front))
+(= 1 (q (+ q-front 1)))
+(= (+ j (- 1)) 0)
+(= (+ q-back (- q-front)) 0)
+(=> f (<= (+ N (- i)) 0))
+(=> f (not (<= (+ N (- i)) 0)))
+(=> (not f) (<= (+ N (- i)) 0))
+(and f (<= (+ N (- i)) 0))
+(and f (not (<= (+ N (- i)) 0)))
+(and (<= N s) (<= s N))
+(and (<= i s) (<= s N))
+(and (<= i s) (<= s i) (= q-back q-front))
+(and (<= i s) (<= s (+ N (- 1))) (= q-back q-front))
+(and (<= i s) (<= s (+ N (- 1))) (= 1 (q q-front)))
+(and (<= i 0) (<= 0 N))
+(and (<= i 0) (<= 0 i) (= q-back q-front))
+(and (<= i (+ s 1)) (<= s (+ N (- 1))) (= 1 (q q-front)))
+(and (<= q-back (+ q-front 1)) (<= q-front (+ q-back (- 1))) (<= i s) (<= s i) (= 1 (q q-front)))
+(and (<= q-back (+ q-front 1)) (<= q-front (+ q-back (- 1))) (<= i (+ s 1)) (<= s (+ i (- 1))) (= 1 (q q-front)))
+(and (<= q-front (+ q-back (- 1))) (<= q-back (+ q-front 1)))
+(and (= 1 (q q-front)) (<= N (+ s 1)) (<= s (+ N (- 1))))
+(and (= 1 (q q-front)) (<= i s) (<= s (+ N (- 1))))
+(and (= 1 (q q-front)) (<= i (+ s 1)) (<= s (+ N (- 1))))
+(and (= 1 (q q-front)) (= (+ j (- 1)) 0) (and (<= (+ i j) (+ s 1)) (<= s (+ j N (- 2)))))
+(and (= (+ j (- 1)) 0) (and (<= N (+ s 1)) (<= s (+ N (- 1)))))
+(and (= (+ j (- 1)) 0) (and (<= i (+ s 1)) (<= s (+ N (- 1)))))
+(and (= (+ j (- 1)) 0) (and (<= (+ j N) (+ s 1)) (<= s (+ j N (- 1)))))
+(and (= (+ q-back (- q-front)) 0) (= (+ j (- 1)) 0) (and (<= i (+ s 1)) (<= s (+ N (- 2)))))
+(and (= (+ q-back (- q-front)) 0) (= (+ j (- 1)) 0) (and (<= i (+ s 1)) (<= s (+ i (- 1)))))
+(and (= (+ q-back (- q-front)) 0) (= (+ j (- 1)) 0) (and (<= (+ i j) (+ s 1)) (<= s (+ j N (- 2)))))
+(and (not (<= (+ N (- i)) 0)) f)
+(and (not (<= (+ N (- s) 1) 0)) (<= N s))
+(ite (not (<= (+ N (- s) 1) 0)) (=> (not (<= (+ N (- s)) 0)) (<= (+ j N) s)) (<= s (+ j N)))
+(not f)
+(not (<= (+ N (- i)) 0))
+(not (= 0 j))
+(or (and (not (<= (+ N (- s) 1) 0)) (<= N s)) f)
+)
+
+(assume (and
+  (= q-front q-back)
+  (>= N 0)))
+
+(par
+  (seq
+    (set! i 0)
+    (while (< i N)
+      (atomic
+        (assume (= (q q-back) 1))
+        (set! q-back (+ q-back 1)))
+      (set! i (+ i 1)))
+    (atomic
+      (assume (= (q q-back) 0))
+      (set! q-back (+ q-back 1))))
+
+  (seq
+    (set! s 0)
+    (set! f true)
+    (while f
+      (atomic
+        (assume (> q-back q-front))
+        (set! j (q q-front))
+        (set! q-front (+ q-front 1)))
+      (set! s (+ s j))
+      (set! f (/= j 0)))))
+
+(assume (not (= s N)))

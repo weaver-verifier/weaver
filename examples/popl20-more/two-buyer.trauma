@@ -1,0 +1,131 @@
+; From http://simonjf.com/2016/05/28/session-type-implementations.html
+
+(var buyer-1       buyer-2       seller       (Int) Int)
+(var buyer-1-front buyer-2-front seller-front Int)
+(var buyer-1-back  buyer-2-back  seller-back  Int)
+
+(var continue-1 continue-2 Bool)
+(var message-1 message-2 Int)
+(var title price-1 price-2 reject quit accept address date Int)
+
+(var safe Bool)
+
+(assume safe)
+(assume (= buyer-1-front buyer-1-back))
+(assume (= buyer-2-front buyer-2-back))
+(assume (= seller-front  seller-back))
+
+(par
+  ; Buyer 1
+  (seq
+    ; send(seller, title)
+    (atomic
+      (assume (= (seller seller-back) title))
+      (set! seller-back (+ seller-back 1)))
+
+    (set! continue-2 true)
+    (while (and safe continue-2)
+      ; recv(accept|reject|quit)
+      (atomic
+        (assume (> buyer-1-back buyer-1-front))
+        (set! message-1 (buyer-1 buyer-1-front))
+        (set! buyer-1-front (+ buyer-1-front 1)))
+
+      (if (or (= message-1 accept) (= message-1 quit))
+          (set! continue-2 false)
+          (set! safe (and safe (= message-1 reject))))))
+
+  ; Buyer 2
+  (seq
+    ; recv(price-1)
+    (atomic
+      (assume (> buyer-2-back buyer-2-front))
+      (set! safe (and safe (= (buyer-2 buyer-2-front) price-1)))
+      (set! buyer-2-front (+ buyer-2-front 1)))
+
+    (set! continue-1 true)
+    (while (and safe continue-1)
+      ; recv(price-2)
+      (atomic
+        (assume (> buyer-2-back buyer-2-front))
+        (set! safe (and safe (= (buyer-2 buyer-2-front) price-2)))
+        (set! buyer-2-front (+ buyer-2-front 1)))
+
+      (cond
+        ; send(buyer-1, reject)
+        (atomic
+          (assume (= (buyer-1 buyer-1-back) reject))
+          (set! buyer-1-back (+ buyer-1-back 1)))
+
+        (seq
+          ; send(buyer-1, quit)
+          (atomic
+            (assume (= (buyer-1 buyer-1-back) quit))
+            (set! buyer-1-back (+ buyer-1-back 1)))
+
+          ; send(seller, quit)
+          (atomic
+            (assume (= (seller seller-back) quit))
+            (set! seller-back (+ seller-back 1)))
+          (set! continue-1 false))
+
+        (seq
+          ; send(buyer-1, accept)
+          (atomic
+            (assume (= (buyer-1 buyer-1-back) accept))
+            (set! buyer-1-back (+ buyer-1-back 1)))
+
+          ; send(seller, address)
+          (atomic
+            (assume (= (seller seller-back) address))
+            (set! seller-back (+ seller-back 1)))
+
+          ; recv(date)
+          (atomic
+            (assume (> buyer-2-back buyer-2-front))
+            (set! safe (and safe (= (buyer-2 buyer-2-front) date)))
+            (set! buyer-2-front (+ buyer-2-front 1)))
+
+          (set! continue-1 false)))))
+
+
+  ; Seller
+  (seq
+    ; recv(title)
+    (atomic
+      (assume (> seller-back seller-front))
+      (set! safe (and safe (= (seller seller-front) title)))
+      (set! seller-front (+ seller-front 1)))
+
+    ; Sending price-1 to buyer-2 first so that buyer-2 always receives price-1 before price-2.
+    ; send(buyer-2, price-1)
+    (atomic
+      (assume (= (buyer-2 buyer-2-back) price-1))
+      (set! buyer-2-back (+ buyer-2-back 1)))
+
+    ; send(buyer-1, price-1)
+    (atomic
+      (assume (= (buyer-1 buyer-1-back) price-1))
+      (set! buyer-1-back (+ buyer-1-back 1)))
+
+    ; recv(accept|quit)
+    (atomic
+      (assume (> seller-back seller-front))
+      (set! message-2 (seller seller-front))
+      (set! seller-front (+ seller-front 1)))
+
+    (if (= message-2 accept)
+        (seq
+          ; recv(address)
+          (atomic
+            (assume (> seller-back seller-front))
+            (set! safe (and safe (= (seller seller-front) address)))
+            (set! seller-front (+ seller-front 1)))
+          ; send(buyer-2, date)
+          (atomic
+            (assume (= (buyer-2 buyer-2-back) date))
+            (set! buyer-2-back (+ buyer-2-back 1))))
+        (set! safe (and safe (= message-2 quit))))))
+
+
+(assume (not safe))
