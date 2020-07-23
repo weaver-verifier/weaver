@@ -1,0 +1,12 @@
+(var X Y Int)
+
+(assume (and (<= X 10000) (= Y 0)))
+
+(replicate 2
+  (declare (x Int)
+     (assume (= x X))
+     (while (< x 10000)
+       (set! x (+ x 1)))
+     (set! Y (+ Y x))))
+
+(assume (not (= Y 20000)))

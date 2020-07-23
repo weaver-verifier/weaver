@@ -164,8 +164,10 @@ compileStmts tid (List ("par":ss))  = foldr Par Nil <$> traverseWithKey (\i → 
 compileStmts tid (List ("loop":ss))
   | ("par":_) ← ss = report ["The first statement of a loop cannot be a `par' statement"]
   | otherwise      = Rep <$> compileStmts (InRep tid) (List ("seq":ss))
-compileStmts tid (List ["declare", List (Symbols [x] :> Sort a), s]) =
-  local (insert x (Some (mkV x tid (Rank SNil a)))) (compileStmts (InDecl tid) s)
+compileStmts tid (List ("declare" : List (Symbols [x] :> Sort a) : ss)) =
+  local (insert x (Some (mkV x tid (Rank SNil a)))) (compileStmts (InDecl tid) (List ("seq": ss)))
+compileStmts tid (List ("replicate":Numeral n:ss)) = compileStmts tid
+  (List ("par" : replicate (fromIntegral n) (List ("seq" : ss))))
 compileStmts tid (List ("while":e:ss)) = compileStmts tid
   [ "seq"
   , List ("loop":["assume", e]:ss)
