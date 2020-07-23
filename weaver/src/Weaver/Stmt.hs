@@ -12,7 +12,7 @@
     ViewPatterns
   #-}
 
-module Weaver.Stmt (V, mkV, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
+module Weaver.Stmt (ThreadID (..), V, mkV, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
 
 import qualified Prelude as P
 import Prelude hiding (and, not, null, map)
@@ -36,34 +36,38 @@ import Language.SMT.Var (Var (..), Sorts (..), Rank (..))
 import Numeric.Natural (Natural)
 import Weaver.Config
 
-data V a = V Text Natural (Rank a)
+data ThreadID
+  = Root
+  deriving (Eq, Ord)
+
+data V a = V Text Natural ThreadID (Rank a)
 
 instance SExpressible (V a) where
-  toSExpr (V x _ _) = Symbol x
+  toSExpr (V x _ _ _) = Symbol x
 
-mkV ∷ Text → Rank a → V a
-mkV x s = V x 0 s
+mkV ∷ Text → ThreadID → Rank a → V a
+mkV x t s = V x 0 t s
 
 prime ∷ V a → V a
-prime (V x i s) = V x (i + 1) s
+prime (V x i t s) = V x (i + 1) t s
 
 unprime ∷ V a → V a
-unprime (V x _ s) = V x 0 s
+unprime (V x _ t s) = V x 0 t s
 
 instance GEq V where
-  geq (V x₁ i₁ s₁) (V x₂ i₂ s₂)
-    | (x₁, i₁) == (x₂, i₂) = geq s₁ s₂
-    | otherwise            = Nothing
+  geq (V x₁ i₁ t₁ s₁) (V x₂ i₂ t₂ s₂)
+    | (x₁, i₁, t₁) == (x₂, i₂, t₂) = geq s₁ s₂
+    | otherwise                    = Nothing
 
 instance GCompare V where
-  gcompare (V x₁ i₁ s₁) (V x₂ i₂ s₂) =
-    case compare (x₁, i₁) (x₂, i₂) of
+  gcompare (V x₁ i₁ t₁ s₁) (V x₂ i₂ t₂ s₂) =
+    case compare (x₁, i₁, t₁) (x₂, i₂, t₂) of
       LT → GLT
       GT → GGT
       EQ → gcompare s₁ s₂
 
 instance Var V where
-  rank (V _ _ s) = s
+  rank (V _ _ _ s) = s
 
 newtype U a = U { toV ∷ V '( '[], a) }
 
