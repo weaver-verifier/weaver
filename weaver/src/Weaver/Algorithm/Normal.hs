@@ -9,26 +9,28 @@
 
 module Weaver.Algorithm.Normal where
 
-import Control.Monad (when)
-import Data.Automata.DFA (DFA, approximate, difference, find, member)
-import Data.Automata.NFA (NFA, toDFA)
-import Data.Automata.Graph (lower, optimize, vertices)
-import Data.Finite.Container (Container, Index)
-import Data.Finite.Small.Map (Map)
-import Data.Foldable (for_, foldl')
-import Data.Set ((\\), fromDistinctAscList, toAscList)
-import Language.SMT.SExpr (prettyPrint)
-import Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), proofToNFA)
-import Weaver.Config (Config, debug)
-import Weaver.Counterexample (Counterexample (..), singleton)
-import Weaver.Program (Tag)
-import Weaver.Stmt (Stmt)
+import           Control.Monad (when)
+import           Data.Automata.DFA (DFA, approximate, difference, find, member)
+import           Data.Automata.NFA (NFA)
+import qualified Data.Automata.NFA as NFA
+import           Data.Automata.Graph (lower, optimize, vertices)
+import qualified Data.Automata.Regex as Regex
+import           Data.Finite.Container (Container, Index)
+import           Data.Finite.Small.Map (Map)
+import           Data.Foldable (for_, foldl')
+import           Data.Set ((\\), fromDistinctAscList, toAscList)
+import           Language.SMT.SExpr (prettyPrint)
+import           Weaver.Algorithm (Algorithm (..), Assertions, Solver' (..), Interface (..), proofToNFA)
+import           Weaver.Config (Config, debug)
+import           Weaver.Counterexample (Counterexample (..), singleton)
+import           Weaver.Program (Tag)
+import           Weaver.Stmt (Stmt)
 
 algorithm ∷ Algorithm
 algorithm = Algorithm \solver program → Interface
   (initialize solver)
   size
-  (check program)
+  (check (Regex.toDFA program))
   (generalize solver)
   (display . fst)
   (shrink solver)
@@ -43,7 +45,7 @@ size = vertices . snd
 
 check ∷ Container c a ⇒ DFA (Map (Index c)) → Proof c -> Counterexample c
 check programDFA (_, πNFA) =
-  let πDFA = toDFA πNFA
+  let πDFA = NFA.toDFA πNFA
       diff = difference programDFA πDFA
       opt  = optimize (approximate diff)
   in case find opt of

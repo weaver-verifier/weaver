@@ -11,8 +11,9 @@
 module Weaver.Algorithm.TotalOpt where
 
 import           Data.Automata.DFA (DFA, Edge (..), approximate, difference, find)
-import           Data.Automata.NFA (toDFA)
+import qualified Data.Automata.NFA as NFA
 import           Data.Automata.Graph (foldCut, optimize)
+import qualified Data.Automata.Regex as Regex
 import           Data.Finite.Container (Container, Index)
 import qualified Data.Finite.Set as Set
 import           Data.Finite.Set.Antichain (Antichain)
@@ -29,7 +30,7 @@ algorithm ∷ Algorithm
 algorithm = Algorithm \solver program → Interface
   (initialize solver)
   size
-  (check program)
+  (check (Regex.toDFA program))
   (generalize solver)
   (\(_, φs, _) → display φs)
   (shrink solver)
@@ -49,4 +50,4 @@ check programDFA (deps, _, πNFA)
           AC.empty
           (tail (subsequences (toKeyedList δ)))
 
-        diff = approximate (optimize (difference programDFA (toDFA πNFA)))
+        diff = approximate (optimize (difference programDFA (NFA.toDFA πNFA)))

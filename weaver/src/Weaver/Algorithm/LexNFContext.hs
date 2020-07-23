@@ -17,6 +17,7 @@ module Weaver.Algorithm.LexNFContext where
 import           Data.Automata.DFA (Edge (..), approximate, difference)
 import           Data.Automata.NFA (toDFA)
 import           Data.Automata.Graph (foldCut, optimize)
+import qualified Data.Automata.Regex as Regex
 import           Data.Finite.Container (Container, Index)
 import qualified Data.Finite.Set as Set
 import           Data.Finite.Set.AntiMap (AntiMap)
@@ -33,7 +34,7 @@ import           Weaver.Stmt (Stmt)
 
 algorithm ∷ Algorithm
 algorithm = Algorithm \solver program → Interface
-  (initialize solver program)
+  (initialize solver (Regex.toDFA program))
   size
   check
   (generalize solver)

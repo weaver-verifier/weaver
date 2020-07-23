@@ -14,8 +14,9 @@ module Weaver.Algorithm.PartitionProgressTrace where
 
 import           Prelude hiding (lookup, putStr)
 import           Control.Monad (filterM, unless, when)
-import           Data.Automata.DFA (DFA, Edge (..))
+import           Data.Automata.DFA (Edge (..))
 import           Data.Automata.Graph (foldCut)
+import           Data.Automata.Regex (Regex)
 import           Data.Finite.Container (Container, Index, lookup)
 import           Data.Finite.Class (universe)
 import           Data.Finite.Set (Set)
@@ -49,7 +50,7 @@ algorithm = Algorithm \solver program → Interface
 
 type Proof c = (Map (Index c) (Set (Index c)), NormalTrace.Proof c)
 
-initialize ∷ ∀c. (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → DFA (Map (Index c)) → Assertions → IO (Proof c)
+initialize ∷ ∀c. (Container c ([Tag], Stmt), ?config ∷ Config) ⇒ Solver' → Regex (Index c) → Assertions → IO (Proof c)
 initialize solver program φs = do
   let stmts = universe
 

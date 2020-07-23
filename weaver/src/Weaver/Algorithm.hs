@@ -22,8 +22,8 @@ module Weaver.Algorithm where
 import           Prelude hiding (lookup, putStrLn, readFile)
 import           Control.Monad (filterM)
 import           Data.Automata.Graph (GraphM (..))
-import           Data.Automata.DFA (DFA)
 import           Data.Automata.NFA (NFAM, Edge (..))
+import           Data.Automata.Regex (Regex)
 import           Data.Finite.Class (universe)
 import           Data.Finite.Container (Container, Index, lookup, reify)
 import qualified Data.Finite.Set as Set
@@ -46,7 +46,7 @@ data Solver' = Solver'
 newtype Algorithm = Algorithm (∀c.
   (Container c ([Tag], Stmt), ?config ∷ Config) ⇒
   Solver' →
-  DFA (Map (Index c)) →
+  Regex (Index c) →
   Interface c)
 
 data Interface c = ∀π. Interface

@@ -22,6 +22,7 @@ import           Data.Automata.Classes (Absorb (..))
 import           Data.Automata.NFA (NFA, NFAM, toDFA)
 import qualified Data.Automata.NFA as NFA
 import           Data.Automata.Graph (pattern Unfold, GraphM (..), foldCut, lower, optimize)
+import qualified Data.Automata.Regex as Regex
 import           Data.Finite.Container (Container, Index, lookup, reify)
 import           Data.Finite.Class (universe)
 import           Data.Finite.Set (Set)
@@ -47,7 +48,7 @@ import           Weaver.Stmt (Stmt)
 
 algorithm ∷ Algorithm
 algorithm = Algorithm \solver program → Interface
-  (initialize solver program)
+  (initialize solver (Regex.toDFA program))
   size
   check
   (generalize solver)

@@ -23,7 +23,7 @@ import           Control.Exception.Base (evaluate)
 import           Control.Monad (when)
 import           Control.Monad.Except (runExceptT, throwError)
 import           Control.Monad.IO.Class (MonadIO (..))
-import           Data.Automata.Regex (Regex, canonical, toDFA)
+import           Data.Automata.Regex (Regex, canonical)
 import           Data.Finite.Container (Index)
 import           Data.Foldable (for_)
 import           Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
@@ -182,7 +182,7 @@ verifyProgram bound iters solver (Algorithm algorithm) (Program asserts (regex �
             writeIORef isIndepCache (OrdMap.insert key result isIndepCache₀)
             return result
 
-      program = toDFA (canonical regex)
+      program = canonical regex
 
   Interface initialize size check generalize display shrink ← return (algorithm (Solver' {..}) program)
 
