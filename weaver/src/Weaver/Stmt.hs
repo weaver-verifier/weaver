@@ -38,6 +38,11 @@ import Weaver.Config
 
 data ThreadID
   = Root
+  | InAlt Int ThreadID
+  | InSeq Int ThreadID
+  | InPar Int ThreadID
+  | InRep ThreadID
+  | InDecl ThreadID
   deriving (Eq, Ord)
 
 data V a = V Text Natural ThreadID (Rank a)

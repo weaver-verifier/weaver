@@ -28,6 +28,7 @@ import Data.Bifunctor (first)
 import Data.Finite.Container (Container, Index, reify)
 import Data.Functor.Product (Product (..))
 import Data.GADT.Compare (GEq (..))
+import Data.Key (traverseWithKey)
 import Data.Map (Map, empty, insert, lookup, member)
 import Data.Some (Some (..))
 import Data.Text (Text, concat)
@@ -154,31 +155,33 @@ addDecl s x = do
   put (insert x (Some (mkV x Root s)) env)
 
 compileBody ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ [SExpr Void] → m (Regex Stmt)
-compileBody = fmap (foldr Cat Nil) . traverse compileStmts
+compileBody = fmap (foldr Cat Nil) . traverse (compileStmts Root)
 
-compileStmts ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ SExpr Void → m (Regex Stmt)
-compileStmts (List ("cond":ss)) = foldr Alt Emp <$> traverse compileStmts ss
-compileStmts (List ("seq":ss))  = foldr Cat Nil <$> traverse compileStmts ss
-compileStmts (List ("par":ss))  = foldr Par Nil <$> traverse compileStmts ss
-compileStmts (List ("loop":ss))
+compileStmts ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ ThreadID → SExpr Void → m (Regex Stmt)
+compileStmts tid (List ("cond":ss)) = foldr Alt Emp <$> traverseWithKey (\i → compileStmts (InAlt i tid)) ss
+compileStmts tid (List ("seq":ss))  = foldr Cat Nil <$> traverseWithKey (\i → compileStmts (InSeq i tid)) ss
+compileStmts tid (List ("par":ss))  = foldr Par Nil <$> traverseWithKey (\i → compileStmts (InPar i tid)) ss
+compileStmts tid (List ("loop":ss))
   | ("par":_) ← ss = report ["The first statement of a loop cannot be a `par' statement"]
-  | otherwise      = Rep <$> compileStmts (List ("seq":ss))
-compileStmts (List ("while":e:ss)) = compileStmts
+  | otherwise      = Rep <$> compileStmts (InRep tid) (List ("seq":ss))
+compileStmts tid (List ["declare", List (Symbols [x] :> Sort a), s]) =
+  local (insert x (Some (mkV x tid (Rank SNil a)))) (compileStmts (InDecl tid) s)
+compileStmts tid (List ("while":e:ss)) = compileStmts tid
   [ "seq"
   , List ("loop":["assume", e]:ss)
   , ["assume", ["not", e]]
   ]
-compileStmts (List ["if", e, s₁, s₂]) = compileStmts
+compileStmts tid (List ["if", e, s₁, s₂]) = compileStmts tid
   [ "cond"
   , ["seq", ["assume", e], s₁]
   , ["seq", ["assume", ["not", e]], s₂]
   ]
-compileStmts (List ["if", e, s]) = compileStmts
+compileStmts tid (List ["if", e, s]) = compileStmts tid
   [ "cond"
   , ["seq", ["assume", e], s]
   , ["assume", ["not", e]]
   ]
-compileStmts s = Sym <$> compileStmt s
+compileStmts _ s = Sym <$> compileStmt s
 
 compileStmt ∷ (MonadReader Env m, MonadError Text m, MonadFail m) ⇒ SExpr Void → m Stmt
 compileStmt (List ["assume", e]) = assume <$> compileExpr Bool e
