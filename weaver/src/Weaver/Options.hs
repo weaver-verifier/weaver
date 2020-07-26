@@ -24,8 +24,10 @@ import qualified Weaver.Algorithm.Normal as Normal
 import qualified Weaver.Algorithm.NormalTrace as NormalTrace
 import qualified Weaver.Algorithm.Partition as Partition
 import qualified Weaver.Algorithm.PartitionProgress as PartitionProgress
-import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTrace
 import qualified Weaver.Algorithm.PartitionProgressContext as PartitionProgressContext
+import qualified Weaver.Algorithm.PartitionProgressSets as PartitionProgressSets
+import qualified Weaver.Algorithm.PartitionProgressTrace as PartitionProgressTrace
+import qualified Weaver.Algorithm.PartitionSets as PartitionSets
 import qualified Weaver.Algorithm.TotalOpt as TotalOpt
 import qualified Weaver.Algorithm.TotalProgressOpt as TotalProgressOpt
 import qualified Weaver.Algorithm.TotalProgressContext as TotalProgressContext
@@ -60,7 +62,7 @@ parseOptions = execParser (info optionsParser mempty)
         method  "partition"                  = Just Partition.algorithm
         method  "lex-nf"                     = Just LexNF.algorithm
         method  "lex-nf-context"             = Just LexNFContext.algorithm
-        -- method  "partition-sets"             = Just PartitionSets
+        method  "partition-sets"             = Just PartitionSets.algorithm
         method  "partition-progress"         = Just PartitionProgress.algorithm
         method  "partition-progress-trace"   = Just PartitionProgressTrace.algorithm
         method  "partition-progress-context" = Just PartitionProgressContext.algorithm
@@ -68,7 +70,7 @@ parseOptions = execParser (info optionsParser mempty)
         method  "total-progress-opt"         = Just TotalProgressOpt.algorithm
         method  "total-progress-context"     = Just TotalProgressContext.algorithm
         method  "total-progress-context-opt" = Just TotalProgressContextOpt.algorithm
-        -- method  "partition-progress-sets"    = Just PartitionProgressSets
+        method  "partition-progress-sets"    = Just PartitionProgressSets.algorithm
         method  _                            = Nothing
 
         backend "mathsat"             = Just mathSAT
