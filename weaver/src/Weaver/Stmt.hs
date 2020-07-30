@@ -12,7 +12,7 @@
     ViewPatterns
   #-}
 
-module Weaver.Stmt (ThreadID (..), V, mkV, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
+module Weaver.Stmt (ThreadID (..), V, mkV, threadID, withThreadID, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
 
 import qualified Prelude as P
 import Prelude hiding (and, not, null, map)
@@ -58,6 +58,12 @@ prime (V x i t s) = V x (i + 1) t s
 
 unprime ∷ V a → V a
 unprime (V x _ t s) = V x 0 t s
+
+threadID ∷ V a → ThreadID
+threadID (V _ _ t _) = t
+
+withThreadID ∷ ThreadID → V a → V a
+withThreadID t (V x i _ s) = V x i t s
 
 instance GEq V where
   geq (V x₁ i₁ t₁ s₁) (V x₂ i₂ t₂ s₂)
