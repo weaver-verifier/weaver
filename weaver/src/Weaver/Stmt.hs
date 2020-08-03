@@ -1,10 +1,12 @@
 {-# LANGUAGE
+    ApplicativeDo,
     BlockArguments,
     DataKinds,
     FlexibleInstances,
     GADTs,
     ImplicitParams,
     MultiParamTypeClasses,
+    RankNTypes,
     TypeFamilies,
     OverloadedLists,
     OverloadedStrings,
@@ -12,7 +14,7 @@
     ViewPatterns
   #-}
 
-module Weaver.Stmt (ThreadID (..), V, mkV, threadID, withThreadID, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep) where
+module Weaver.Stmt (ThreadID (..), V, mkV, threadID, withThreadID, Stmt, isArtificial, artificial, assume, assign, atomic, indep, prove, isTriple, isIndep, straverse, straverse_) where
 
 import qualified Prelude as P
 import Prelude hiding (and, not, null, map)
@@ -23,13 +25,14 @@ import Data.Constraint (Dict (..))
 import Data.Constraint.Compose (ComposeC)
 import Data.Constraint.Extras (ArgDict (..))
 import Data.Dependent.Sum (DSum (..))
-import Data.Dependent.Map (DMap, empty, findWithDefault, foldrWithKey, insert, intersectionWithKey, null, map, mapWithKey, singleton, union, toList)
+import Data.Dependent.Map (DMap, empty, findWithDefault, foldrWithKey, fromList, insert, intersectionWithKey, null, map, mapWithKey, singleton, union, toList)
+import Data.Foldable (traverse_)
 import Data.Functor.Const (Const (..))
 import Data.GADT.Compare (GEq (..), GCompare (..), GOrdering (..), gcompare, geq)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import Data.Type.Equality ((:~:) (..))
-import Language.SMT.Expr (Expr, and, ebind, eq, emap, not, var, imp)
+import Language.SMT.Expr (Expr, and, ebind, eq, emap, etraverse, etraverse_, not, var, imp)
 import Language.SMT.SExpr (SExpr (..), SExpressible (..))
 import Language.SMT.Solver (Solver, interpolate, isSatisfiable, isValid)
 import Language.SMT.Var (Var (..), Sorts (..), Rank (..))
@@ -110,6 +113,17 @@ instance GCompare U where
 
 data Stmt = Stmt Bool [Expr V Bool] (DMap U (Expr V))
   deriving (Eq, Ord)
+
+straverse ∷ Applicative f ⇒ (∀a. V a → f (V a)) → Stmt → f Stmt
+straverse f (Stmt b φs xs) = do
+  φs' ← traverse (etraverse f) φs
+  xs' ← fromList <$> traverse (\(U k :=> v) → (:=>) <$> (U <$> f k) <*> etraverse f v) (toList xs)
+  pure (Stmt b φs' xs')
+
+straverse_ ∷ Applicative f ⇒ (∀a. V a → f b) → Stmt → f ()
+straverse_ f (Stmt _ φs xs) =
+  traverse_ (etraverse_ f) φs *>
+  traverse_ (\(U k :=> v) → f k *> etraverse_ f v) (toList xs)
 
 isArtificial ∷ Stmt → Bool
 isArtificial (Stmt b _ _) = b
